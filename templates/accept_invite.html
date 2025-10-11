@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accept Project Invitation - LWS</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/alpinejs@3.13.0/dist/cdn.min.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    [x-cloak] { display: none !important; }
+    .fade-enter {
+      animation: fade-in 0.2s ease-out;
+    }
+    @keyframes fade-in {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-950 text-gray-800 dark:text-gray-100 min-h-screen">
+  <div x-data="inviteState()" class="min-h-screen flex flex-col items-center justify-center p-4">
+    <!-- Main Card -->
+    <div class="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-md w-full p-8 fade-enter">
+      <!-- Logo -->
+      <div class="flex justify-center mb-8">
+        <div class="w-16 h-16 bg-teal-100 dark:bg-teal-900 rounded-full flex items-center justify-center">
+          <svg class="h-8 w-8 text-teal-600 dark:text-teal-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 9V15C21 18.3137 18.3137 21 15 21H9C5.68629 21 3 18.3137 3 15V9C3 5.68629 5.68629 3 9 3H15C18.3137 3 21 5.68629 21 9Z" stroke="currentColor" stroke-width="2"/>
+            <path d="M7 9.5H17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M7 14.5H17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Invitation Details -->
+      <div class="text-center mb-8">
+        <h1 class="text-2xl font-bold mb-2">Project Invitation</h1>
+        <p class="text-gray-600 dark:text-gray-400">
+          <span x-text="inviter"></span> has invited you to join their project
+        </p>
+        <div class="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+          <h2 class="font-semibold text-lg mb-1" x-text="projectName"></h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400" x-text="projectDescription"></p>
+        </div>
+      </div>
+
+      <!-- Status Message -->
+      <div x-show="status" class="mt-6">
+        <div x-show="status === 'success'" class="bg-green-50 dark:bg-green-900/50 text-green-800 dark:text-green-200 p-4 rounded-lg">
+          <div class="flex items-center">
+            <i class="fas fa-check-circle mr-2"></i>
+            <p>Successfully joined the project! Redirecting to home page...</p>
+          </div>
+        </div>
+        <div x-show="status === 'error'" class="bg-red-50 dark:bg-red-900/50 text-red-800 dark:text-red-200 p-4 rounded-lg">
+          <div class="flex items-center">
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            <p x-text="errorMessage"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Home Button -->
+      <div class="mt-6 text-center">
+        <a href="/" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/50 hover:bg-teal-100 dark:hover:bg-teal-900/70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500">
+          <i class="fas fa-home mr-2"></i>
+          Go to Home
+        </a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
+      <p>Lite Web Services</p>
+      <p class="mt-1">&copy; 2023 All rights reserved</p>
+    </div>
+  </div>
+
+  <script>
+    function inviteState() {
+      return {
+        status: null,
+        errorMessage: '',
+        inviter: '{{ inviter }}',
+        projectName: '{{ project_name }}',
+        projectDescription: '{{ project_description }}',
+        async init() {
+          try {
+            const response = await fetch('/project/accept', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                invite_id: '{{ invite_id }}'
+              })
+            });
+            
+            if (response.ok) {
+              this.status = 'success';
+              setTimeout(() => {
+                window.location.href = '/';
+              }, 2000);
+            } else {
+              const data = await response.json();
+              this.status = 'error';
+              this.errorMessage = data.message || 'Failed to accept invitation. Please try again.';
+            }
+          } catch (error) {
+            this.status = 'error';
+            this.errorMessage = 'An unexpected error occurred. Please try again.';
+          }
+        }
+      };
+    }
+  </script>
+</body>
+</html> 

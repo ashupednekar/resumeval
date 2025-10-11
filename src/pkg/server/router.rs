@@ -1,15 +1,29 @@
-use axum::{middleware::from_fn_with_state, routing::{get, post}, Router};
+use axum::middleware::from_fn_with_state;
+use axum::routing::post;
+use axum::{Router, routing::get};
 
-use crate::{pkg::middlewares::auth::auth_middleware, prelude::Result, state::AppState};
-
-use super::handlers::{probes::livez, user_mgmt::{initiate_user_registration, verify_user_registration}};
+use super::handlers;
+use super::handlers::auth::{logout, signup, verify};
+use super::handlers::probes::{healthz, livez};
+use super::handlers::ui::{buckets, containers, functions, home};
+use super::middlewares::authn;
+use super::state::AppState;
+use crate::prelude::Result;
 
 pub async fn build_routes() -> Result<Router> {
     let state = AppState::new().await?;
-    Ok(Router::new()
-        .layer(from_fn_with_state(state.clone(), auth_middleware))
-        .route("/livez/", get(livez))
-        .route("/register/initiate/", post(initiate_user_registration))
-        .route("/register/verify/", get(verify_user_registration))
-        .with_state(state))
+    let app = Router::new()
+        .route("/", get(home))
+        .route("/logout", post(logout))
+        .route("/project", post(handlers::project::create))
+        .route("/project/invite", post(handlers::project::invite))
+        .route("/project/accept", get(handlers::project::accept))
+        .layer(from_fn_with_state(state.clone(), authn::authenticate))
+        .route("/signup", post(signup))
+        .route("/verify", post(verify))
+        .route("/healthz", get(healthz))
+        .route("/livez", get(livez))
+        .with_state(state);
+
+    Ok(app)
 }

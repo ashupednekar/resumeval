@@ -1,0 +1,11 @@
+errors:
+  - code: ERR-AUTH-001
+    detail_en_US: "Authentication required"
+  - code: ERR-AUTH-002
+    detail_en_US: "Token string not a valid uuid"
+  - code: ERR-AUTH-003
+    detail_en_US: "Invalid code"
+  - code: ERR-PROJ-001
+    detail_en_US: "Invalid code"
+  - code: ERR-REPO-001
+    detail_en_US: "Error creating repo: [err]"

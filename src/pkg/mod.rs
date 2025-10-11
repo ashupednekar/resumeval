@@ -1,4 +1,2 @@
-pub mod email;
-pub mod middlewares;
+pub mod internal;
 pub mod server;
-pub mod users;

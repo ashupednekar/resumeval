@@ -4,11 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-clap = { version = "4.5.48", features = ["derive"] }
-config = "0.15.18"
 lazy_static = "1.5.0"
-serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.145"
+config = "0.15.6"
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.136"
+clap = { version = "4.5.26", features = ["derive"] }
 tracing = "0.1.40"
 tracing-opentelemetry = "0.27.0"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
@@ -18,7 +18,20 @@ opentelemetry_sdk = { version = "0.26.0", features = ["rt-tokio"] }
 tracing-test = "0.2.5"
 tokio = { version = "1.43.0", features = ["full"] }
 axum = "0.7.5"
-sqlx = { version = "0.8.3", features = ["postgres", "runtime-tokio"] }
-standard-error = { version = "0.1.7", features = ["sqlx"] }
+sqlx = { version = "0.8.3", features = ["postgres", "time", "uuid", "runtime-tokio", "tls-rustls"] }
+async-trait = "0.1.86"
+axum-macros = "0.5.0"
+standard-error = { version = "0.1.9", features = ["sqlx", "askama", "reqwest"] }
+chrono = { version = "0.4.39", features = ["serde"] }
 uuid = { version = "1.12.1", features = ["v4"] }
 humantime = "2.1.0"
+lettre = "0.11.15"
+axum-extra = { version = "0.10.1", features = ["cookie"] }
+askama = { version = "0.14.0", features = ["derive", "serde_json"] }
+validator = { version = "0.20.0", features = ["derive"] }
+rand = "0.9.1"
+futures = "0.3.31"
+reqwest = { version = "0.12.15", features = ["json", "rustls-tls"] }
+
+[dev-dependencies]
+sqlx-cli = "0.8.3"

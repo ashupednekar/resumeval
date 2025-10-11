@@ -1,14 +1,23 @@
 pub mod handlers;
-mod router;
+pub mod middlewares;
+pub mod router;
+pub mod state;
+pub mod uispec;
 
-use crate::{conf::settings, pkg::server::router::build_routes, prelude::Result};
-use tokio::net::TcpListener;
+use crate::{conf::settings, prelude::Result};
+use router::build_routes;
 
 pub async fn listen() -> Result<()> {
-    let listener = TcpListener::bind(&format!("0.0.0.0:{}", &settings.listen_port))
-        .await
-        .unwrap();
-    tracing::info!("listening at: {}", &settings.listen_port);
-    axum::serve(listener, build_routes().await?).await?;
+    let listener =
+        tokio::net::TcpListener::bind(format!("0.0.0.0:{}", settings.listen_port.clone())).await?;
+    tracing::info!("Listening at port {}", settings.listen_port);
+    tokio::select! {
+        r = axum::serve(listener, build_routes().await?) => {
+            tracing::warn!("server ended unexpectedly: {:?}", &r)
+        },
+        _ = tokio::signal::ctrl_c() => {
+            tracing::info!("received ctrl+c interrupt, closing server");
+        }
+    }
     Ok(())
 }

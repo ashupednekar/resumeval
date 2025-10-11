@@ -1,4 +1,3 @@
 pub mod auth;
-pub mod probes;
+pub mod email;
 pub mod project;
-pub mod ui;

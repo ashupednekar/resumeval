@@ -1,8 +1,7 @@
 mod cmd;
-mod conf;
+pub mod conf;
 pub mod pkg;
 mod prelude;
-pub mod state;
 
 use crate::prelude::Result;
 

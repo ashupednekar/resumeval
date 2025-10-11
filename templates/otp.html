@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Your Email - LiteWebServices</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+  <script src="https://unpkg.com/alpinejs@3.13.0/dist/cdn.min.js" defer></script>
+  <script>
+    document.addEventListener('alpine:init', () => {
+      Alpine.store('theme', {
+        dark: localStorage.getItem('theme') === 'dark' || true,
+        toggle() {
+          this.dark = !this.dark;
+          document.documentElement.classList.toggle('dark', this.dark);
+          localStorage.setItem('theme', this.dark ? 'dark' : 'light');
+        }
+      });
+      document.documentElement.classList.toggle('dark', Alpine.store('theme').dark);
+    });
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    input[type="text"].digit-box::-webkit-outer-spin-button,
+    input[type="text"].digit-box::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="text"].digit-box { -moz-appearance: textfield; }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-950 text-gray-800 dark:text-gray-100 min-h-screen">
+  <div class="min-h-screen flex items-center justify-center px-4">
+    <div class="max-w-md w-full bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-10 flex flex-col items-center">
+      <!-- Logo/Header -->
+      <div class="w-full text-left mb-8">
+        <div>
+          <h1 class="text-3xl font-extrabold text-teal-700 dark:text-teal-300">LiteWebServices</h1>
+          <h2 class="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">Verify Your Email</h2>
+        </div>
+      </div>
+      <!-- Verification Form -->
+      <div x-data="{
+        digits: ['', '', '', '', '', ''],
+        email: '',
+        name: '',
+        showEmailInput: false,
+        showNameInput: false,
+        showOtpInput: false,
+        init() {
+          const cookies = document.cookie.split(';').map(c => c.trim());
+          const emailCookie = cookies.find(c => c.startsWith('_Host_lws_email='));
+          if (emailCookie) {
+            this.email = decodeURIComponent(emailCookie.split('=')[1]);
+            this.showOtpInput = true;
+            this.showEmailInput = false;
+            this.showNameInput = false;
+          } else {
+            this.showEmailInput = true;
+            this.showNameInput = true;
+            this.showOtpInput = false;
+          }
+        },
+        setDigit(i, e) {
+          if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            this.digits[i] = e.key;
+            if (i < 5 && this.$refs['d'+(i+1)]) this.$refs['d'+(i+1)].focus();
+            e.preventDefault();
+          } else if (e.key === 'Backspace') {
+            this.digits[i] = '';
+            if (i > 0 && this.$refs['d'+(i-1)]) this.$refs['d'+(i-1)].focus();
+            e.preventDefault();
+          } else if (e.key === 'ArrowLeft' && i > 0 && this.$refs['d'+(i-1)]) {
+            this.$refs['d'+(i-1)].focus();
+            e.preventDefault();
+          } else if (e.key === 'ArrowRight' && i < 5 && this.$refs['d'+(i+1)]) {
+            this.$refs['d'+(i+1)].focus();
+            e.preventDefault();
+          }
+        },
+        submitCode() {
+          let code = this.digits.join('');
+          if (code.length === 6) {
+            this.$refs.codeInput.value = code;
+            this.$refs.verifyForm.requestSubmit();
+          }
+        }
+      }">
+        <div x-show="showEmailInput || showNameInput" x-cloak>
+          <form
+            hx-post="/signup"
+            hx-target="#signup-error"
+            hx-swap="innerHTML"
+            hx-on::after-request="if(event.detail.successful) { 
+              showEmailInput = false;
+              showNameInput = false;
+              showOtpInput = true;
+            }"
+            class="space-y-6"
+          >
+            <template x-if="showEmailInput">
+              <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                <input type="email" id="email" name="email" x-model="email" class="digit-box w-full h-16 text-2xl text-center rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors" required>
+              </div>
+            </template>
+            <template x-if="showNameInput">
+              <div>
+                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+                <input type="text" id="name" name="name" x-model="name" class="digit-box w-full h-16 text-2xl text-center rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors" required>
+              </div>
+            </template>
+            <div id="signup-error" class="text-red-500 text-sm"></div>
+            <button
+              type="submit"
+              class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-semibold text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors"
+              :disabled="!email || !name"
+              :class="(!email || !name) ? 'opacity-60 cursor-not-allowed' : ''"
+            >
+              Continue
+            </button>
+          </form>
+        </div>
+        <div x-show="showOtpInput" x-cloak x-effect="if(showOtpInput && $refs['d0']) { $refs['d0'].focus(); }">
+          <p class="text-gray-600 dark:text-gray-400 mb-6 text-base">
+            We've sent a verification code to your email ending with <span class="font-semibold">***<span x-text="email"></span></span>
+          </p>
+          <form
+            x-ref="verifyForm"
+            hx-post="/verify"
+            hx-target="#code-error"
+            hx-swap="innerHTML"
+            hx-on::after-request="if(event.detail.successful) { window.location.href = '/'; }"
+            class="space-y-6"
+            @submit.prevent="submitCode"
+          >
+            <input type="hidden" name="code" x-ref="codeInput">
+            <div class="flex justify-center space-x-3 mb-2">
+              <template x-for="(digit, i) in digits" :key="i">
+                <input
+                  type="text"
+                  maxlength="1"
+                  class="digit-box w-14 h-16 text-2xl text-center rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-colors"
+                  :autofocus="i === 0"
+                  x-model="digits[i]"
+                  x-ref="'d'+i"
+                  @keydown="setDigit(i, $event)"
+                  @input="if ($event.target.value.length === 1 && i < 5) $refs['d'+(i+1)].focus()"
+                >
+              </template>
+            </div>
+            <div id="code-error"></div>
+            <button
+              type="submit"
+              class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-semibold text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition-colors"
+              :disabled="digits.join('').length !== 6"
+              :class="digits.join('').length === 6 ? '' : 'opacity-60 cursor-not-allowed'"
+            >
+              Verify Email
+            </button>
+          </form>
+          <div class="mt-6 text-center">
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              Didn't receive the code?
+              <a href="#" class="font-medium text-teal-600 dark:text-teal-400 hover:text-teal-500 dark:hover:text-teal-300">
+                Resend code
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html> 

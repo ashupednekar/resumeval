@@ -1,0 +1,13 @@
+metrics:
+  image:
+    repository: bitnamilegacy/minio
+image:
+  repository: bitnamilegacy/minio
+persistence:
+  storageclass: gp3encryptretain
+ingress:
+  enabled: false
+service:
+  type: NodePort
+  nodePorts: 
+  - api: 30090
