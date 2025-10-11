@@ -1,9 +1,9 @@
 use ai::clients::openai::Client as AIClient;
+use minio::s3::Client as MinioClient;
 use sqlx::PgPool;
 use std::sync::Arc;
 use standard_error::{Interpolate, StandardError};
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
-
 use crate::{conf::settings, prelude::Result};
 
 pub fn db_pool() -> Result<Pool<Postgres>> {
@@ -16,7 +16,7 @@ pub fn db_pool() -> Result<Pool<Postgres>> {
 #[derive(Debug, Clone)]
 pub struct AppState {
     pub db_pool: Arc<PgPool>,
-    pub ai_client: Arc<AIClient>
+    pub ai_client: Arc<AIClient>,
 }
 
 impl AppState {
@@ -40,7 +40,7 @@ impl AppState {
         };
         Ok(AppState {
             db_pool: Arc::new(db_pool()?),
-            ai_client: Arc::new(ai)
+            ai_client: Arc::new(ai),
         })
     }
 }

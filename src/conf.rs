@@ -23,7 +23,8 @@ pub struct Settings {
     pub ai_endpoint: String,
     pub ai_provider: String,
     pub ai_model: String,
-    pub ai_key: String
+    pub ai_key: String,
+    pub s3_bucket_name: String
 }
 
 impl Settings {
