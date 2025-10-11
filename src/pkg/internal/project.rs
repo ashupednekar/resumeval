@@ -55,7 +55,7 @@ impl Project {
             Ok::<(), StandardError>(())
         };
   
-        let repo_details = project.clone();
+        let _repo_details = project.clone();
         let repo_result = async move {
             //TODO: create repo if needed
             Ok::<(), StandardError>(())
