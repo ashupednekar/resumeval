@@ -13,15 +13,16 @@ impl<'a> JobMutator<'a>{
         JobMutator{pool}
     }
 
-    pub async fn create(&mut self, job: CreateJobInput) -> Result<JobEntry> {
+    pub async fn create(&mut self, create_by: &str, job: CreateJobInput) -> Result<JobEntry> {
         let row = sqlx::query_as::<_, JobEntry>(
             r#"
-            INSERT INTO jobs (title, department, description, requirements, url)
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING id, title, department, description, requirements, url, created_at, updated_at
+            INSERT INTO jobs (title, created_by, department, description, requirements, url)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING id, created_by, title, department, description, requirements, url, created_at, updated_at
             "#
         )
         .bind(&job.title)
+        .bind(&create_by)
         .bind(&job.department)
         .bind(&job.description)
         .bind(&job.requirements)

@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS jobs (
     id SERIAL PRIMARY KEY,
+    create_by VARCHAR(50) NOT NULL,
     title VARCHAR(255) NOT NULL,
     department VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,

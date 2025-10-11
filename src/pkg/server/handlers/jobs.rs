@@ -6,7 +6,7 @@ use serde_json::{Value, json};
 
 use crate::{
     pkg::{
-        internal::auth::User,
+        internal::{adaptors::jobs::{mutators::JobMutator, spec::JobEntry}, auth::User},
         server::state::AppState,
     },
     prelude::Result,
@@ -37,34 +37,14 @@ pub struct GenerateJobInput {
     pub url: String,
 }
 
-#[derive(Serialize)]
-pub struct Job {
-    pub id: u32,
-    pub title: String,
-    pub department: String,
-    pub description: String,
-    pub requirements: String,
-    pub status: String,
-    pub applicants: u32,
-    pub created: String,
-}
 
 pub async fn create(
-    State(_state): State<AppState>,
-    Extension(_user): Extension<Arc<User>>,
+    State(state): State<AppState>,
+    Extension(user): Extension<Arc<User>>,
     Json(input): Json<CreateJobInput>,
-) -> Result<Json<Job>> {
-    let job = Job {
-        id: rand::random::<u32>(),
-        title: input.title,
-        department: input.department,
-        description: input.description,
-        requirements: input.requirements,
-        status: "active".to_string(),
-        applicants: 0,
-        created: "just now".to_string(),
-    };
-
+) -> Result<Json<JobEntry>> {
+    let mut tx = state.db_pool.begin().await?;
+    let job = JobMutator::new(&mut tx).create(&user.user_id, input).await?;
     Ok(Json(job))
 }
 
@@ -87,30 +67,7 @@ pub async fn generate_from_url(
 pub async fn list(
     State(_state): State<AppState>,
     Extension(_user): Extension<Arc<User>>,
-) -> Result<Json<Vec<Job>>> {
+) -> Result<Json<Vec<JobEntry>>> {
     // Placeholder hardcoded jobs
-    let jobs = vec![
-        Job {
-            id: 1,
-            title: "Senior Frontend Developer".to_string(),
-            department: "Engineering".to_string(),
-            description: "We are looking for a senior frontend developer to join our team...".to_string(),
-            requirements: "React, TypeScript, 5+ years experience".to_string(),
-            status: "active".to_string(),
-            applicants: 12,
-            created: "2 days ago".to_string(),
-        },
-        Job {
-            id: 2,
-            title: "Product Manager".to_string(),
-            department: "Product".to_string(),
-            description: "Lead product strategy and development...".to_string(),
-            requirements: "MBA, 3+ years PM experience".to_string(),
-            status: "active".to_string(),
-            applicants: 8,
-            created: "1 week ago".to_string(),
-        },
-    ];
-
-    Ok(Json(jobs))
+    Ok(Json(vec![]))
 }
