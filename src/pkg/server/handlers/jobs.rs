@@ -3,6 +3,7 @@ use std::sync::Arc;
 use axum::{Extension, Json, extract::State};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use standard_error::{Interpolate, StandardError};
 
 use crate::{
     pkg::{
@@ -91,4 +92,19 @@ pub async fn list(
     let mut tx = state.db_pool.begin().await?;
     let jobs = JobSelector::new(&mut *tx).get_all().await?;
     Ok(Json(jobs))
+}
+
+pub async fn update(
+    State(state): State<AppState>,
+    Extension(_user): Extension<Arc<User>>,
+    Json(input): Json<PatchJobInput>,
+) -> Result<Json<JobEntry>> {
+    let mut tx = state.db_pool.begin().await?;
+    let job = JobMutator::new(&mut tx).update(input.id as i32, input).await?;
+    tx.commit().await?;
+    
+    match job {
+        Some(updated_job) => Ok(Json(updated_job)),
+        None => Err(StandardError::new("ERR-JOB-001")),
+    }
 }

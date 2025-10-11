@@ -540,7 +540,7 @@
               
               <div>
                 <label class="block text-sm font-medium text-card-foreground mb-2">Upload Resumes</label>
-                <div class="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer" @click="$refs.fileInput.click()" @dragover.prevent @drop.prevent="handleDrop($event)">
+                <div class="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer" @click="$refs.fileInput.click()" @dragover.prevent="handleDragOver($event)" @dragleave.prevent="handleDragLeave($event)" @drop.prevent="handleDrop($event)">
                   <input type="file" x-ref="fileInput" multiple accept=".pdf,.doc,.docx" class="hidden" @change="handleFiles($event.target.files)">
                   <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fas fa-cloud-upload-alt text-2xl text-muted-foreground"></i>
@@ -574,6 +574,54 @@
               </button>
               <button type="submit" :disabled="newTask.resumes.length === 0" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed">
                 Start Evaluation
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Job Modal -->
+    <div x-show="showEditJobModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 fade-enter" x-cloak>
+      <div @click.away="showEditJobModal = false" class="bg-card border border-border rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center border-b border-border px-6 py-4">
+          <h3 class="text-lg font-medium text-card-foreground">Edit Job Description</h3>
+          <button @click="showEditJobModal = false" class="text-muted-foreground hover:text-foreground">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-6">
+          <form @submit.prevent="updateJob">
+            <div class="space-y-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-card-foreground mb-1">Job Title</label>
+                  <input x-model="editingJob.title" type="text" class="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent" required>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-card-foreground mb-1">Department</label>
+                  <input x-model="editingJob.department" type="text" class="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent" required>
+                </div>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-card-foreground mb-1">Job Description</label>
+                <textarea x-model="editingJob.description" class="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent" rows="4" required></textarea>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-card-foreground mb-1">Requirements</label>
+                <textarea x-model="editingJob.requirements" class="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent" rows="3" required></textarea>
+              </div>
+            </div>
+            
+            <div class="mt-6 flex justify-end space-x-3">
+              <button type="button" @click="showEditJobModal = false" class="px-4 py-2 border border-border rounded-md text-card-foreground bg-card hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring">
+                Cancel
+              </button>
+              <button type="submit" :disabled="isUpdatingJob" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed">
+                <i :class="isUpdatingJob ? 'fas fa-spinner fa-spin mr-1' : 'fas fa-save mr-1'"></i>
+                <span x-text="isUpdatingJob ? 'Updating...' : 'Update Job'"></span>
               </button>
             </div>
           </form>
@@ -624,7 +672,7 @@
                 </div>
               </div>
               <div class="space-y-2">
-                <button class="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+                <button @click="editJob(selectedJob)" class="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
                   <i class="fas fa-edit mr-2"></i>Edit Job
                 </button>
                 <button class="w-full px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors">
@@ -646,11 +694,14 @@
         showNewProjectModal: false,
         showInviteModal: false,
         showCreateJobModal: false,
+        showEditJobModal: false,
         showCreateTaskModal: false,
         showJobDetail: false,
         inviteEmail: '',
         selectedJob: null,
+        editingJob: null,
         isGenerating: false,
+        isUpdatingJob: false,
         currentProject: null,
         username: '{{ username }}',
         notifications: [
@@ -798,6 +849,43 @@
             this.isGenerating = false;
           }
         },
+        editJob(job) {
+          this.editingJob = { ...job };
+          this.showJobDetail = false;
+          this.showEditJobModal = true;
+        },
+        async updateJob() {
+          if (!this.editingJob || this.isUpdatingJob) return;
+          
+          this.isUpdatingJob = true;
+          try {
+            const response = await fetch('/jobs', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(this.editingJob)
+            });
+            
+            if (response.ok) {
+              const updatedJob = await response.json();
+              // Update the job in the jobs array
+              const index = this.jobs.findIndex(j => j.id === updatedJob.id);
+              if (index !== -1) {
+                this.jobs[index] = updatedJob;
+              }
+              this.showEditJobModal = false;
+              this.editingJob = null;
+              this.addNotification('success', 'Job Updated', 'Job description has been updated successfully.');
+            } else {
+              const error = await response.text();
+              this.addNotification('error', 'Update Failed', error || 'Failed to update job description.');
+            }
+          } catch (e) {
+            console.error('Failed to update job:', e);
+            this.addNotification('error', 'Update Failed', 'An error occurred while updating the job.');
+          } finally {
+            this.isUpdatingJob = false;
+          }
+        },
         async createTask() {
           try {
             const formData = new FormData();
@@ -823,11 +911,63 @@
           }
         },
         handleFiles(files) {
-          this.newTask.resumes = [...this.newTask.resumes, ...Array.from(files)];
+          // Filter for valid file types
+          const validFiles = Array.from(files).filter(file => {
+            const validTypes = ['.pdf', '.doc', '.docx'];
+            const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+            return validTypes.includes(fileExtension) && file.size <= 10 * 1024 * 1024; // 10MB limit
+          });
+          
+          if (validFiles.length !== files.length) {
+            this.addNotification('error', 'Invalid Files', 'Some files were rejected. Only PDF, DOC, DOCX files under 10MB are allowed.');
+          }
+          
+          this.newTask.resumes = [...this.newTask.resumes, ...validFiles];
         },
         handleDrop(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Remove drag over styling
+          e.target.classList.remove('border-primary/50');
+          e.target.classList.add('border-border');
+          
           const files = Array.from(e.dataTransfer.files);
           this.handleFiles(files);
+        },
+        handleDragOver(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Add drag over styling
+          e.target.classList.remove('border-border');
+          e.target.classList.add('border-primary/50');
+        },
+        handleDragLeave(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Remove drag over styling
+          e.target.classList.remove('border-primary/50');
+          e.target.classList.add('border-border');
+        },
+        addNotification(type, title, message) {
+          const notification = {
+            id: Date.now(),
+            type,
+            title,
+            message,
+            time: 'Just now'
+          };
+          this.notifications.unshift(notification);
+          
+          // Auto-remove after 5 seconds
+          setTimeout(() => {
+            const index = this.notifications.findIndex(n => n.id === notification.id);
+            if (index > -1) {
+              this.notifications.splice(index, 1);
+            }
+          }, 5000);
         }
       };
     }

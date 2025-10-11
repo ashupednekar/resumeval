@@ -21,6 +21,8 @@ pub struct Settings {
     pub smtp_server: String,
     pub smtp_port: u16,
     pub ai_endpoint: String,
+    pub ai_provider: String,
+    pub ai_model: String,
     pub ai_key: String
 }
 
@@ -29,7 +31,30 @@ impl Settings {
         let conf = Config::builder()
             .add_source(Environment::default())
             .build()?;
-        conf.try_deserialize()
+        let mut s: Settings = conf.try_deserialize()?;
+        match s.ai_provider.as_str(){
+        "ollama" => {
+            s.ai_key = "ollama".into();
+            s.ai_endpoint = "http://localhost:11434/v1".into();
+            if s.ai_model.is_empty(){
+                s.ai_model = "gemma3:12b".into();
+            }
+        },
+        "openai" => {
+            s.ai_endpoint = "https://api.openai.com/v1".into();
+            if s.ai_model.is_empty(){
+                s.ai_model = "gpt-4o-mini".into();
+            }
+        },
+        "gemini" => {
+            s.ai_endpoint = "https://generativelanguage.googleapis.com/v1beta/openai".into();
+            if s.ai_model.is_empty(){
+                s.ai_model = "gemini-2.5-flash".into();
+            }
+        },
+        _ => {}
+    }
+        Ok(s)
     }
 }
 

@@ -6,7 +6,7 @@ use pgvector::Vector;
 use sqlx::PgConnection;
 use standard_error::{Interpolate, StandardError};
 
-use crate::prelude::Result;
+use crate::{conf::settings, prelude::Result};
 use crate::pkg::internal::ai::spec::Document;
 
 
@@ -20,7 +20,7 @@ pub async fn direct_query(
         context.unwrap_or(""), query
     );
     let request = ChatCompletionRequestBuilder::default()
-        .model("gemma3:12b")
+        .model(&settings.ai_model)
         .messages(vec![ChatCompletionMessage::User(prompt.into())])
         .build()
         .map_err(|e| StandardError::new("ERR-AI-001").interpolate_err(e.to_string()))

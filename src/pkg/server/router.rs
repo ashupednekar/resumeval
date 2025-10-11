@@ -20,6 +20,7 @@ pub async fn build_routes() -> Result<Router> {
         .route("/project/accept", get(handlers::project::accept))
         .route("/jobs", post(handlers::jobs::create))
         .route("/jobs", get(handlers::jobs::list))
+        .route("/jobs", axum::routing::patch(handlers::jobs::update))
         .route("/jobs/generate", post(handlers::jobs::generate_from_url))
         .route("/evaluations", post(handlers::evaluations::create))
         .route("/evaluations", get(handlers::evaluations::list))
