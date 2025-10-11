@@ -278,16 +278,16 @@
             </div>
             
             <div x-show="jobs.length > 0" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <template x-for="job in jobs" :key="job.id">
+              <template x-for="job in jobs" :key="job.title">
                 <div class="bg-muted rounded-lg p-4 hover:bg-muted/80 transition-colors cursor-pointer" @click="selectedJob = job; showJobDetail = true">
                   <div class="flex justify-between items-start mb-2">
                     <h3 class="font-medium text-card-foreground" x-text="job.title"></h3>
-                    <span class="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full" x-text="job.status"></span>
+                    <span class="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">Active</span>
                   </div>
                   <p class="text-sm text-muted-foreground mb-3" x-text="job.department"></p>
                   <div class="flex justify-between items-center text-xs text-muted-foreground">
-                    <span x-text="job.applicants + ' applicants'"></span>
-                    <span x-text="job.created"></span>
+                    <span>0 applicants</span>
+                    <span x-text="new Date(job.created_at).toLocaleDateString()"></span>
                   </div>
                 </div>
               </template>
@@ -479,9 +479,10 @@
               <div>
                 <label class="block text-sm font-medium text-card-foreground mb-1">AI Generate from URL (Optional)</label>
                 <div class="flex gap-2">
-                  <input x-model="newJob.aiUrl" type="url" class="flex-1 px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="https://company.com/job-posting">
-                  <button type="button" @click="generateFromUrl" class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors">
-                    <i class="fas fa-magic mr-1"></i>Generate
+                  <input x-model="newJob.url" type="url" class="flex-1 px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="https://company.com/job-posting">
+                  <button type="button" @click="generateFromUrl" :disabled="isGenerating || !newJob.url" class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i :class="isGenerating ? 'fas fa-spinner fa-spin mr-1' : 'fas fa-magic mr-1'"></i>
+                    <span x-text="isGenerating ? 'Generating...' : 'Generate'"></span>
                   </button>
                 </div>
               </div>
@@ -649,51 +650,30 @@
         showJobDetail: false,
         inviteEmail: '',
         selectedJob: null,
+        isGenerating: false,
         currentProject: null,
         username: '{{ username }}',
         notifications: [
-          {
-            id: 1,
-            type: 'success',
-            title: 'Container Deployed',
-            message: 'nginx-web was successfully deployed',
-            time: '2 minutes ago'
-          },
-          {
-            id: 2,
-            type: 'error',
-            title: 'Deployment Failed',
-            message: 'Failed to deploy api-service',
-            time: '10 minutes ago'
-          },
-          {
-            id: 3,
-            type: 'info',
-            title: 'Registry Added',
-            message: 'Private registry was added successfully',
-            time: '1 hour ago'
-          }
+          <!-- { -->
+          <!--   id: 3, -->
+          <!--   type: 'info', -->
+          <!--   title: 'Registry Added', -->
+          <!--   message: 'Private registry was added successfully', -->
+          <!--   time: '1 hour ago' -->
+          <!-- } -->
         ],
         projects: JSON.parse('{{ projects|json|safe }}'),
         newProject: { name: '', description: '' },
-        newJob: { title: '', department: '', description: '', requirements: '', aiUrl: '' },
+        newJob: { title: '', department: '', description: '', requirements: '', url: '' },
         newTask: { name: '', jobId: '', resumes: [] },
-        jobs: [
-          { id: 1, title: 'Senior Frontend Developer', department: 'Engineering', status: 'active', applicants: 12, created: '2 days ago', description: 'We are looking for a senior frontend developer...', requirements: 'React, TypeScript, 5+ years experience' },
-          { id: 2, title: 'Product Manager', department: 'Product', status: 'active', applicants: 8, created: '1 week ago', description: 'Lead product strategy and development...', requirements: 'MBA, 3+ years PM experience' },
-          { id: 3, title: 'UX Designer', department: 'Design', status: 'draft', applicants: 0, created: '3 days ago', description: 'Create beautiful user experiences...', requirements: 'Figma, Portfolio, 2+ years experience' }
-        ],
-        evaluationTasks: [
-          { id: 1, name: 'Frontend Dev Batch #1', jobTitle: 'Senior Frontend Developer', status: 'completed', totalResumes: 25, processed: 25, accepted: 8, rejected: 12, pending: 5 },
-          { id: 2, name: 'PM Candidates Q1', jobTitle: 'Product Manager', status: 'processing', totalResumes: 15, processed: 10, accepted: 3, rejected: 4, pending: 8 },
-          { id: 3, name: 'Design Team Hiring', jobTitle: 'UX Designer', status: 'pending', totalResumes: 8, processed: 0, accepted: 0, rejected: 0, pending: 8 }
-        ],
+        jobs: [],
+        evaluationTasks: [],
         selectProject(project) {
           this.currentProject = project;
           // Set project cookie (string id)
           document.cookie = `current_project=${project.project_id}; path=/; max-age=31536000`;
         },
-        init() {
+        async init() {
           // Check for project cookie on init
           const cookies = document.cookie.split(';');
           const projectCookie = cookies.find(c => c.trim().startsWith('current_project='));
@@ -704,19 +684,46 @@
               this.currentProject = project;
             }
           }
+          
+          // Load initial data
+          await this.loadJobs();
+          await this.loadEvaluationTasks();
+        },
+        async loadJobs() {
+          try {
+            const response = await fetch('/jobs');
+            if (response.ok) {
+              this.jobs = await response.json();
+            }
+          } catch (e) {
+            console.error('Failed to load jobs:', e);
+          }
+        },
+        async loadEvaluationTasks() {
+          try {
+            const response = await fetch('/evaluations');
+            if (response.ok) {
+              this.evaluationTasks = await response.json();
+            }
+          } catch (e) {
+            console.error('Failed to load evaluation tasks:', e);
+          }
         },
         async createProject() {
           if (this.newProject.name.trim() === '') return;
           try {
-            const formData = new FormData();
-            formData.append('name', this.newProject.name);
-            formData.append('description', this.newProject.description);
+            const payload = {
+              name: this.newProject.name,
+              description: this.newProject.description
+            };
             
             const response = await fetch('/project', {
               method: 'POST',
-              body: formData
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(payload)
             });
-            
             if (response.ok) {
               const projects = await response.json();
               this.projects = projects;
@@ -761,19 +768,21 @@
               const job = await response.json();
               this.jobs.push(job);
               this.showCreateJobModal = false;
-              this.newJob = { title: '', department: '', description: '', requirements: '', aiUrl: '' };
+              this.newJob = { title: '', department: '', description: '', requirements: '', url: '' };
             }
           } catch (e) {
             console.error('Failed to create job:', e);
           }
         },
         async generateFromUrl() {
-          if (!this.newJob.aiUrl) return;
+          if (!this.newJob.url || this.isGenerating) return;
+          
+          this.isGenerating = true;
           try {
             const response = await fetch('/jobs/generate', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ url: this.newJob.aiUrl })
+              body: JSON.stringify({ url: this.newJob.url })
             });
             
             if (response.ok) {
@@ -785,6 +794,8 @@
             }
           } catch (e) {
             console.error('Failed to generate job:', e);
+          } finally {
+            this.isGenerating = false;
           }
         },
         async createTask() {
@@ -803,8 +814,7 @@
             });
             
             if (response.ok) {
-              const task = await response.json();
-              this.evaluationTasks.push(task);
+              await this.loadEvaluationTasks(); // Reload the full list
               this.showCreateTaskModal = false;
               this.newTask = { name: '', jobId: '', resumes: [] };
             }

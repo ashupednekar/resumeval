@@ -7,8 +7,14 @@ errors:
     detail_en_US: "Invalid code"
   - code: ERR-PROJ-001
     detail_en_US: "Invalid code"
-  - code: ERR-REPO-001
-    detail_en_US: "Error creating repo: [err]"
+  - code: ERR-AI-000
+    detail_en_US: "Error initializing ai client"
+  - code: ERR-AI-001
+    detail_en_US: "Error getting AI model [err]"
+  - code: ERR-AI-002
+    detail_en_US: "Error getting chat completions [err]"
+  - code: ERR-AI-003
+    detail_en_US: "Error initializing embeddings [err]"
   - code: EVAL-001
     detail_en_US: "Failed to read multipart field"
   - code: EVAL-002

@@ -20,6 +20,8 @@ pub struct Settings {
     pub smtp_pass: String,
     pub smtp_server: String,
     pub smtp_port: u16,
+    pub ai_endpoint: String,
+    pub ai_key: String
 }
 
 impl Settings {

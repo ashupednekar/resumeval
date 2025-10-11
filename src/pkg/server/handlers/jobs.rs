@@ -6,7 +6,7 @@ use serde_json::{Value, json};
 
 use crate::{
     pkg::{
-        internal::{adaptors::jobs::{mutators::JobMutator, selectors::JobSelector, spec::JobEntry}, auth::User},
+        internal::{adaptors::jobs::{mutators::JobMutator, selectors::JobSelector, spec::JobEntry}, ai::{fetch::process, generate::direct_query}, auth::User},
         server::state::AppState,
     },
     prelude::Result,
@@ -44,23 +44,45 @@ pub async fn create(
 ) -> Result<Json<JobEntry>> {
     let mut tx = state.db_pool.begin().await?;
     let job = JobMutator::new(&mut tx).create(&user.user_id, input).await?;
+    //TODO: trigger other stuff (llm indexing)
+    tx.commit().await?;
     Ok(Json(job))
 }
 
-pub async fn generate_from_url(
-    State(_state): State<AppState>,
-    Extension(_user): Extension<Arc<User>>,
-    Json(_input): Json<GenerateJobInput>,
-) -> Result<Json<Value>> {
-    // Placeholder AI generation - in reality this would call an AI service
-    let generated = json!({
-        "title": "AI Generated Position",
-        "department": "Technology",
-        "description": "This is an AI-generated job description based on the provided URL. In a real implementation, this would analyze the URL content and generate appropriate job details using AI/ML services.",
-        "requirements": "• Bachelor's degree in relevant field\n• 3+ years of experience\n• Strong communication skills\n• Experience with modern technologies"
-    });
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Position {
+    pub title: String,
+    pub department: String,
+    pub description: String,
+    pub requirements: String,
+}
 
-    Ok(Json(generated))
+pub async fn generate_from_url(
+    State(state): State<AppState>,
+    Json(input): Json<GenerateJobInput>,
+) -> Result<Json<Position>> {
+    let jd = process(&input.url).await;
+    let prompt = format!(r#"
+        You are a senior recruiter with immense technical background
+        Here's a job description from a typical job board like linkedin\n
+        {}\n
+        go through it and respond with following json format
+        {{
+             "title": "the job title",
+             "department": "the department in the company",
+             "description": "detailed job description",
+             "requirements": "job requirements"
+         }}
+
+        Note: the extra curly brace is not your concern, ignore that
+        NOTE: thee values here are for you to fill, don't just keep them the same
+        DO NOT DEVIATE THE FORMAT or break JSON
+        "#, &jd);
+    let res = direct_query(&state.ai_client, &prompt, None).await?;
+    let cleaned_json = res.trim_start_matches("```json").trim_end_matches("```");
+    tracing::debug!("AI Result: \n {}", &cleaned_json);
+    let position: Position = serde_json::from_str(cleaned_json)?;
+    Ok(Json(position))
 }
 
 pub async fn list(

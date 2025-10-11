@@ -35,7 +35,7 @@ pub struct ProjectInput {
 pub async fn create(
     State(state): State<AppState>,
     Extension(user): Extension<Arc<User>>,
-    Form(input): Form<ProjectInput>,
+    Json(input): Json<ProjectInput>,
 ) -> Result<Json<Value>> {
     let _project = Project::create(&state, &input.name, &input.description, &user.user_id).await?;
     let projects = Project::list(&state, &user.user_id).await?;

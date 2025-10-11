@@ -94,7 +94,6 @@ impl<'a> JobMutator<'a>{
             .bind(department)
             .execute(&mut *self.pool)
             .await?;
-
         Ok(result.rows_affected())
     }
 }
