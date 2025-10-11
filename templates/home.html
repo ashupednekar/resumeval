@@ -351,6 +351,12 @@
                   <div class="mt-3 bg-background rounded-full h-2">
                     <div class="bg-primary h-2 rounded-full transition-all" :style="'width: ' + (task.processed / task.totalResumes * 100) + '%'"></div>
                   </div>
+                  
+                  <div class="mt-4 flex justify-end">
+                    <button @click="viewEvaluationDetails(task.id)" class="px-3 py-1 text-sm bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors">
+                      <i class="fas fa-eye mr-1"></i>View Details
+                    </button>
+                  </div>
                 </div>
               </template>
             </div>
@@ -968,6 +974,9 @@
               this.notifications.splice(index, 1);
             }
           }, 5000);
+        },
+        viewEvaluationDetails(evaluationId) {
+          window.location.href = `/evaluations/${evaluationId}`;
         }
       };
     }

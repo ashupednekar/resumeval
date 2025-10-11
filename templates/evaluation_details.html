@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evaluation Details - resumEval</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            border: "hsl(var(--border))",
+            input: "hsl(var(--input))",
+            ring: "hsl(var(--ring))",
+            background: "hsl(var(--background))",
+            foreground: "hsl(var(--foreground))",
+            primary: {
+              DEFAULT: "hsl(var(--primary))",
+              foreground: "hsl(var(--primary-foreground))",
+            },
+            secondary: {
+              DEFAULT: "hsl(var(--secondary))",
+              foreground: "hsl(var(--secondary-foreground))",
+            },
+            muted: {
+              DEFAULT: "hsl(var(--muted))",
+              foreground: "hsl(var(--muted-foreground))",
+            },
+            card: {
+              DEFAULT: "hsl(var(--card))",
+              foreground: "hsl(var(--card-foreground))",
+            },
+          },
+          borderRadius: {
+            lg: "var(--radius)",
+            md: "calc(var(--radius) - 2px)",
+            sm: "calc(var(--radius) - 4px)",
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --background: 0 0% 100%;
+      --foreground: 222.2 84% 4.9%;
+      --card: 0 0% 100%;
+      --card-foreground: 222.2 84% 4.9%;
+      --popover: 0 0% 100%;
+      --popover-foreground: 222.2 84% 4.9%;
+      --primary: 221.2 83.2% 53.3%;
+      --primary-foreground: 210 40% 98%;
+      --secondary: 210 40% 96%;
+      --secondary-foreground: 222.2 84% 4.9%;
+      --muted: 210 40% 96%;
+      --muted-foreground: 215.4 16.3% 46.9%;
+      --accent: 210 40% 96%;
+      --accent-foreground: 222.2 84% 4.9%;
+      --destructive: 0 84.2% 60.2%;
+      --destructive-foreground: 210 40% 98%;
+      --border: 214.3 31.8% 91.4%;
+      --input: 214.3 31.8% 91.4%;
+      --ring: 221.2 83.2% 53.3%;
+      --radius: 0.5rem;
+    }
+    .dark {
+      --background: 222.2 84% 4.9%;
+      --foreground: 210 40% 98%;
+      --card: 222.2 84% 4.9%;
+      --card-foreground: 210 40% 98%;
+      --popover: 222.2 84% 4.9%;
+      --popover-foreground: 210 40% 98%;
+      --primary: 217.2 91.2% 59.8%;
+      --primary-foreground: 222.2 84% 4.9%;
+      --secondary: 217.2 32.6% 17.5%;
+      --secondary-foreground: 210 40% 98%;
+      --muted: 217.2 32.6% 17.5%;
+      --muted-foreground: 215 20.2% 65.1%;
+      --accent: 217.2 32.6% 17.5%;
+      --accent-foreground: 210 40% 98%;
+      --destructive: 0 62.8% 30.6%;
+      --destructive-foreground: 210 40% 98%;
+      --border: 217.2 32.6% 17.5%;
+      --input: 217.2 32.6% 17.5%;
+      --ring: 224.3 76.3% 94.0%;
+    }
+  </style>
+</head>
+<body class="h-full bg-background text-foreground" x-data="evaluationDetails()">
+  <div class="min-h-full">
+    <!-- Navigation -->
+    <nav class="bg-card border-b border-border">
+      <div class="container mx-auto px-4">
+        <div class="flex justify-between items-center h-16">
+          <div class="flex items-center space-x-4">
+            <a href="/" class="flex items-center space-x-2">
+              <div class="w-8 h-8 bg-primary rounded flex items-center justify-center">
+                <i class="fas fa-file-alt text-primary-foreground"></i>
+              </div>
+              <span class="text-xl font-bold text-foreground">resumEval</span>
+            </a>
+            <span class="text-muted-foreground">/</span>
+            <span class="text-muted-foreground">Evaluation Details</span>
+          </div>
+          
+          <div class="flex items-center space-x-4">
+            <button @click="goBack()" class="px-3 py-2 text-sm bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors">
+              <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+      <!-- Loading State -->
+      <div x-show="loading" class="text-center py-12">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <p class="mt-4 text-muted-foreground">Loading evaluation details...</p>
+      </div>
+
+      <!-- Error State -->
+      <div x-show="error" class="text-center py-12">
+        <div class="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-exclamation-triangle text-2xl text-destructive"></i>
+        </div>
+        <h3 class="text-lg font-medium text-card-foreground mb-2">Error Loading Evaluation</h3>
+        <p class="text-muted-foreground" x-text="errorMessage"></p>
+      </div>
+
+      <!-- Evaluation Details -->
+      <div x-show="!loading && !error" class="space-y-6">
+        <!-- Header -->
+        <div class="bg-card rounded-lg border shadow-sm p-6">
+          <div class="flex justify-between items-start">
+            <div>
+              <h1 class="text-2xl font-bold text-card-foreground" x-text="evaluation.name"></h1>
+              <p class="text-muted-foreground mt-1" x-text="'Job: ' + evaluation.jobTitle"></p>
+            </div>
+            <span class="text-sm px-3 py-1 rounded-full" 
+                  :class="evaluation.status === 'completed' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 
+                          evaluation.status === 'processing' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 
+                          'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'" 
+                  x-text="evaluation.status"></span>
+          </div>
+          
+          <!-- Stats -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+            <div class="text-center p-4 bg-muted rounded-lg">
+              <div class="text-2xl font-bold text-card-foreground" x-text="evaluation.totalResumes"></div>
+              <div class="text-sm text-muted-foreground">Total Documents</div>
+            </div>
+            <div class="text-center p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <div class="text-2xl font-bold text-green-400" x-text="evaluation.accepted"></div>
+              <div class="text-sm text-muted-foreground">Accepted</div>
+            </div>
+            <div class="text-center p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <div class="text-2xl font-bold text-red-400" x-text="evaluation.rejected"></div>
+              <div class="text-sm text-muted-foreground">Rejected</div>
+            </div>
+            <div class="text-center p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <div class="text-2xl font-bold text-blue-400" x-text="evaluation.pending"></div>
+              <div class="text-sm text-muted-foreground">Pending</div>
+            </div>
+          </div>
+          
+          <!-- Progress Bar -->
+          <div class="mt-6">
+            <div class="flex justify-between text-sm text-muted-foreground mb-2">
+              <span>Processing Progress</span>
+              <span x-text="Math.round((evaluation.processed / evaluation.totalResumes) * 100) + '%'"></span>
+            </div>
+            <div class="bg-muted rounded-full h-3">
+              <div class="bg-primary h-3 rounded-full transition-all" 
+                   :style="'width: ' + (evaluation.processed / evaluation.totalResumes * 100) + '%'"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Documents List -->
+        <div class="bg-card rounded-lg border shadow-sm">
+          <div class="p-6 border-b border-border">
+            <h2 class="text-xl font-semibold text-card-foreground">Documents</h2>
+            <p class="text-muted-foreground">View and manage uploaded resume documents</p>
+          </div>
+          
+          <div class="p-6">
+            <!-- Documents Table -->
+            <div x-show="documents.length === 0" class="text-center py-8">
+              <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-file-pdf text-2xl text-muted-foreground"></i>
+              </div>
+              <h3 class="text-lg font-medium text-card-foreground mb-2">No documents found</h3>
+              <p class="text-muted-foreground">Documents will appear here once uploaded</p>
+            </div>
+            
+            <div x-show="documents.length > 0" class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="border-b border-border">
+                    <th class="text-left py-3 px-4 font-medium text-muted-foreground">Document</th>
+                    <th class="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
+                    <th class="text-left py-3 px-4 font-medium text-muted-foreground">Indexing</th>
+                    <th class="text-left py-3 px-4 font-medium text-muted-foreground">Size</th>
+                    <th class="text-left py-3 px-4 font-medium text-muted-foreground">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="document in documents" :key="document.id">
+                    <tr class="border-b border-border hover:bg-muted/50">
+                      <td class="py-3 px-4">
+                        <div class="flex items-center space-x-3">
+                          <div class="w-8 h-8 bg-red-500/10 border border-red-500/20 rounded flex items-center justify-center">
+                            <i class="fas fa-file-pdf text-red-400 text-sm"></i>
+                          </div>
+                          <div>
+                            <div class="font-medium text-card-foreground" x-text="document.originalFilename"></div>
+                            <div class="text-sm text-muted-foreground" x-text="document.filename"></div>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="py-3 px-4">
+                        <span class="text-xs px-2 py-1 rounded-full border" 
+                              :class="document.evaluationStatus === 'accepted' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 
+                                      document.evaluationStatus === 'rejected' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 
+                                      document.evaluationStatus === 'processing' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                      'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'" 
+                              x-text="document.evaluationStatus || 'pending'"></span>
+                      </td>
+                      <td class="py-3 px-4">
+                        <div class="flex items-center space-x-2">
+                          <div class="w-2 h-2 rounded-full" 
+                               :class="document.indexingStatus === 'completed' ? 'bg-green-400' : 
+                                       document.indexingStatus === 'processing' ? 'bg-blue-400 animate-pulse' : 
+                                       document.indexingStatus === 'failed' ? 'bg-red-400' :
+                                       'bg-yellow-400'"></div>
+                          <span class="text-sm text-muted-foreground" x-text="document.indexingStatus || 'pending'"></span>
+                        </div>
+                      </td>
+                      <td class="py-3 px-4">
+                        <span class="text-sm text-muted-foreground" x-text="formatFileSize(document.fileSize)"></span>
+                      </td>
+                      <td class="py-3 px-4">
+                        <div class="flex items-center space-x-2">
+                          <button @click="viewDocument(document)" 
+                                  class="px-2 py-1 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors">
+                            <i class="fas fa-eye mr-1"></i>View
+                          </button>
+                          <button @click="downloadDocument(document)" 
+                                  class="px-2 py-1 text-xs bg-secondary text-secondary-foreground rounded hover:bg-secondary/80 transition-colors">
+                            <i class="fas fa-download mr-1"></i>Download
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function evaluationDetails() {
+      return {
+        loading: true,
+        error: false,
+        errorMessage: '',
+        evaluation: {},
+        documents: [],
+        
+        async init() {
+          await this.loadEvaluationDetails();
+        },
+        
+        async loadEvaluationDetails() {
+          try {
+            this.loading = true;
+            this.error = false;
+            
+            // Get evaluation ID from URL
+            const pathParts = window.location.pathname.split('/');
+            const evaluationId = pathParts[pathParts.length - 1];
+            
+            // Load evaluation details
+            const evalResponse = await fetch(`/api/evaluations/${evaluationId}`);
+            if (!evalResponse.ok) {
+              throw new Error('Failed to load evaluation details');
+            }
+            this.evaluation = await evalResponse.json();
+            
+            // Load documents
+            const docsResponse = await fetch(`/api/evaluations/${evaluationId}/documents`);
+            if (!docsResponse.ok) {
+              throw new Error('Failed to load documents');
+            }
+            this.documents = await docsResponse.json();
+            
+          } catch (e) {
+            console.error('Failed to load evaluation details:', e);
+            this.error = true;
+            this.errorMessage = e.message;
+          } finally {
+            this.loading = false;
+          }
+        },
+        
+        goBack() {
+          window.location.href = '/';
+        },
+        
+        formatFileSize(bytes) {
+          if (bytes === 0) return '0 Bytes';
+          const k = 1024;
+          const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        },
+        
+        viewDocument(document) {
+          // Open document in new tab/window
+          window.open(`/api/documents/${document.id}/view`, '_blank');
+        },
+        
+        downloadDocument(document) {
+          // Trigger download
+          const link = document.createElement('a');
+          link.href = `/api/documents/${document.id}/download`;
+          link.download = document.originalFilename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      };
+    }
+  </script>
+</body>
+</html>
