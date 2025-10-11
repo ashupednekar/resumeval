@@ -18,8 +18,19 @@ pub struct CreateJobInput {
     pub department: String,
     pub description: String,
     pub requirements: String,
-    pub ai_url: Option<String>,
+    pub url: Option<String>,
 }
+
+#[derive(Deserialize)]
+pub struct PatchJobInput {
+    pub id: u32,
+    pub title: Option<String>,
+    pub department: Option<String>,
+    pub description: Option<String>,
+    pub requirements: Option<String>,
+    pub url: Option<String>,
+}
+
 
 #[derive(Deserialize)]
 pub struct GenerateJobInput {
@@ -43,7 +54,6 @@ pub async fn create(
     Extension(_user): Extension<Arc<User>>,
     Json(input): Json<CreateJobInput>,
 ) -> Result<Json<Job>> {
-    // Placeholder implementation with hardcoded data
     let job = Job {
         id: rand::random::<u32>(),
         title: input.title,

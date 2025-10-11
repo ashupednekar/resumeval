@@ -18,7 +18,7 @@ opentelemetry_sdk = { version = "0.26.0", features = ["rt-tokio"] }
 tracing-test = "0.2.5"
 tokio = { version = "1.43.0", features = ["full"] }
 axum = "0.7.5"
-sqlx = { version = "0.8.3", features = ["postgres", "time", "uuid", "runtime-tokio", "tls-rustls"] }
+sqlx = { version = "0.8.3", features = ["postgres", "time", "uuid", "runtime-tokio", "tls-rustls", "chrono"] }
 async-trait = "0.1.86"
 axum-macros = "0.5.0"
 standard-error = { version = "0.1.9", features = ["sqlx", "askama", "reqwest"] }
