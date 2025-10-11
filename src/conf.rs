@@ -20,9 +20,6 @@ pub struct Settings {
     pub smtp_pass: String,
     pub smtp_server: String,
     pub smtp_port: u16,
-    //git
-    pub git_user: String,
-    pub git_token: String
 }
 
 impl Settings {

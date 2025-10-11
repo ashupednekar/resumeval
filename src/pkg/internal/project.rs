@@ -1,10 +1,10 @@
-use crate::{pkg::{internal::repo::create_new_repo, server::state::AppState}, prelude::Result};
+use crate::{pkg::{server::state::AppState}, prelude::Result};
 use serde::Serialize;
 use sqlx::{prelude::{FromRow, Type}, PgConnection, Postgres, QueryBuilder, Transaction};
 use standard_error::StandardError;
 use uuid::Uuid;
 
-use super::{auth::User, email::invite::ShowInvite, repo::{self, delete_repo}};
+use super::{auth::User, email::invite::ShowInvite};
 
 #[derive(Debug, Type)]
 #[sqlx(type_name = "invite_status", rename_all = "lowercase")]
@@ -57,7 +57,7 @@ impl Project {
   
         let repo_details = project.clone();
         let repo_result = async move {
-            create_new_repo(&repo_details.name, &repo_details.description).await?;
+            //TODO: create repo if needed
             Ok::<(), StandardError>(())
         };
     
@@ -70,7 +70,7 @@ impl Project {
             }
             (Err(e), _) | (_, Err(e)) => {
                 tx.rollback().await?;
-                delete_repo(&project.name).await?;
+                //TODO: repo deletion
                 Err(e)
             }
         }

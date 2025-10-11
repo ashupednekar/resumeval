@@ -188,115 +188,6 @@
         </div>
       </div>
 
-      <!-- Main Dashboard Content (only if project is selected) -->
-      <div x-show="currentProject">
-        <!-- Metrics Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 mb-12">
-          <!-- Containers Card -->
-          <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-10 flex flex-col h-full min-h-[320px] min-w-[320px]">
-            <div class="flex items-center justify-between mb-6">
-              <div class="w-14 h-14 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 mr-3 text-2xl">
-                <i class="fas fa-cubes"></i>
-              </div>
-              <span class="text-4xl font-extrabold text-teal-600" x-text="metrics.containers"></span>
-            </div>
-            <h3 class="text-2xl font-bold mb-3">Containers</h3>
-            <p class="text-lg text-gray-600 dark:text-gray-300 mb-6">Deploy and manage your containerized applications</p>
-            <a href="/containers" 
-               hx-get="/containers" 
-               hx-target="#main-content" 
-               hx-push-url="true"
-               hx-on::after-request="Alpine.store('nav').current = 'containers'"
-               class="inline-flex items-center text-teal-600 hover:text-teal-800 mt-auto text-lg font-semibold">
-              View Containers <i class="fas fa-arrow-right ml-2"></i>
-            </a>
-          </div>
-
-          <!-- Functions Card -->
-          <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-10 flex flex-col h-full min-h-[320px] min-w-[320px]">
-            <div class="flex items-center justify-between mb-6">
-              <div class="w-14 h-14 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 mr-3 text-2xl">
-                <i class="fas fa-bolt"></i>
-              </div>
-              <span class="text-4xl font-extrabold text-teal-600" x-text="metrics.functions"></span>
-            </div>
-            <h3 class="text-2xl font-bold mb-3">Functions</h3>
-            <p class="text-lg text-gray-600 dark:text-gray-300 mb-6">Run serverless functions with ease</p>
-            <a href="/functions" 
-               hx-get="/functions" 
-               hx-target="#main-content" 
-               hx-push-url="true"
-               hx-on::after-request="Alpine.store('nav').current = 'functions'"
-               class="inline-flex items-center text-teal-600 hover:text-teal-800 mt-auto text-lg font-semibold">
-              View Functions <i class="fas fa-arrow-right ml-2"></i>
-            </a>
-          </div>
-
-          <!-- Buckets Card -->
-          <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-10 flex flex-col h-full min-h-[320px] min-w-[320px]">
-            <div class="flex items-center justify-between mb-6">
-              <div class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-3 text-2xl">
-                <i class="fas fa-database"></i>
-              </div>
-              <span class="text-4xl font-extrabold text-teal-600" x-text="metrics.buckets"></span>
-            </div>
-            <h3 class="text-2xl font-bold mb-3">Buckets</h3>
-            <p class="text-lg text-gray-600 dark:text-gray-300 mb-6">Store and manage your objects</p>
-            <a href="/buckets" 
-               hx-get="/buckets" 
-               hx-target="#main-content" 
-               hx-push-url="true"
-               hx-on::after-request="Alpine.store('nav').current = 'buckets'"
-               class="inline-flex items-center text-teal-600 hover:text-teal-800 mt-auto text-lg font-semibold">
-              View Buckets <i class="fas fa-arrow-right ml-2"></i>
-            </a>
-          </div>
-        </div>
-
-        <!-- Recent Activity -->
-        <div class="mt-12 bg-white dark:bg-gray-900 rounded-lg shadow-md overflow-hidden">
-          <div class="p-4 border-b border-gray-200 dark:border-gray-800">
-            <h2 class="text-lg font-medium">Recent Activity</h2>
-          </div>
-          <div class="p-4">
-            <div class="space-y-4">
-              <div class="flex items-start">
-                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-500">
-                  <i class="fas fa-check"></i>
-                </div>
-                <div class="ml-3">
-                  <p class="text-sm font-medium">Container Deployed</p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">nginx-web was successfully deployed</p>
-                  <p class="text-xs text-gray-400">2 minutes ago</p>
-                </div>
-              </div>
-              <div class="flex items-start">
-                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-500">
-                  <i class="fas fa-exclamation"></i>
-                </div>
-                <div class="ml-3">
-                  <p class="text-sm font-medium">Deployment Failed</p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">Failed to deploy api-service</p>
-                  <p class="text-xs text-gray-400">10 minutes ago</p>
-                </div>
-              </div>
-              <div class="flex items-start">
-                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-500">
-                  <i class="fas fa-info"></i>
-                </div>
-                <div class="ml-3">
-                  <p class="text-sm font-medium">Registry Added</p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400">Private registry was added successfully</p>
-                  <p class="text-xs text-gray-400">1 hour ago</p>
-                </div>
-              </div>
-            </div>
-            <div class="mt-4 text-center">
-              <a href="#" class="text-sm text-teal-600 hover:text-teal-800 font-medium">View All Activity</a>
-            </div>
-          </div>
-        </div>
-      </div>
     </main>
 
     <!-- Footer -->
@@ -434,7 +325,6 @@
           }
         ],
         projects: JSON.parse('{{ projects|json|safe }}'),
-        metrics: JSON.parse('{{ metrics|json|safe }}'),
         newProject: { name: '', description: '' },
         selectProject(project) {
           this.currentProject = project;

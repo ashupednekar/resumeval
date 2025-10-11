@@ -52,7 +52,7 @@
         showOtpInput: false,
         init() {
           const cookies = document.cookie.split(';').map(c => c.trim());
-          const emailCookie = cookies.find(c => c.startsWith('_Host_lws_email='));
+          const emailCookie = cookies.find(c => c.startsWith('_Host_email='));
           if (emailCookie) {
             this.email = decodeURIComponent(emailCookie.split('=')[1]);
             this.showOtpInput = true;

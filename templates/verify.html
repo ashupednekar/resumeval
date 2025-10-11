@@ -42,7 +42,7 @@
           <h2 class="mt-2 text-2xl font-bold text-gray-900 dark:text-gray-100">Verify Your Email</h2>
         </div>
         <button
-          onclick="document.cookie='_Host_lws_token=; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=0'; window.location.href='/'"
+          onclick="document.cookie='_Host_token=; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=0'; window.location.href='/'"
           class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
         >
           Logout
@@ -58,7 +58,7 @@
         showOtpInput: false,
         init() {
           const cookies = document.cookie.split(';').map(c => c.trim());
-          const emailCookie = cookies.find(c => c.startsWith('_Host_lws_email='));
+          const emailCookie = cookies.find(c => c.startsWith('_Host_email='));
           if (emailCookie) {
             this.email = decodeURIComponent(emailCookie.split('=')[1]);
             this.showOtpInput = true;

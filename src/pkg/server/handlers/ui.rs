@@ -8,7 +8,7 @@ use crate::{
         internal::{auth::User, project::Project},
         server::{
             state::AppState,
-            uispec::{Buckets, Containers, Functions, Home, Metrics},
+            uispec::Home,
         },
     },
     prelude::Result,
@@ -20,17 +20,9 @@ pub async fn home(
 ) -> Result<Html<String>> {
     let projects = Project::list(&state, &user.user_id).await?;
     tracing::debug!("projects: {:?}", &projects);
-    let metrics = Metrics {
-        containers: 2,
-        functions: 5,
-        buckets: 3,
-        total_requests: 1200000,
-    };
-
     let template = Home {
         username: &user.name,
         projects,
-        metrics,
     };
 
     Ok(Html(template.render()?))

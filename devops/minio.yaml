@@ -1,3 +1,8 @@
+global:
+  security:
+    allowInsecureImages: true
+console:
+  enabled: false
 metrics:
   image:
     repository: bitnamilegacy/minio
@@ -10,4 +15,4 @@ ingress:
 service:
   type: NodePort
   nodePorts: 
-  - api: 30090
+    api: 30090

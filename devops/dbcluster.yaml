@@ -4,8 +4,10 @@ metadata:
   labels:
     app.kubernetes.io/managed-by: Helm
   name: db
-  namespace: essentials
 spec:
+  image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres-gis:ubi8-16.4-3.4-2
+  postgresVersion: 16
+  postGISVersion: "3.4"
   # service:
   #   type: NodePort
   #   nodePort: 30054
@@ -20,6 +22,12 @@ spec:
     replicas: 3
   port: 5432
   postgresVersion: 16
+  config:
+    parameters:
+      shared_preload_libraries: pgvector
+  databaseInitSQL:
+    key: init-sql
+    name: db-pgvector-init
   patroni:
     dynamicConfiguration:
       postgresql:

@@ -38,7 +38,7 @@ pub async fn signup(
     let mut headers = HeaderMap::new();
     headers.insert(
         SET_COOKIE,
-        HeaderValue::from_str(&format!("_Host_lws_email={}", &user.email))?,
+        HeaderValue::from_str(&format!("_Host_email={}", &user.email))?,
     );
     headers.insert("HX-Redirect", HeaderValue::from_str("/otp")?);
     Ok(headers)
@@ -80,7 +80,7 @@ pub async fn verify(
     let pool = &*state.db_pool;
     let jar = CookieJar::from_headers(&headers);
     let mut headers = HeaderMap::new();
-    if let Some(email) = jar.get("_Host_lws_email").filter(|c| !c.value().is_empty()) {
+    if let Some(email) = jar.get("_Host_email").filter(|c| !c.value().is_empty()) {
         let user = sqlx::query_as!(
             User,
             "select user_id, email, name from users where email = $1",
@@ -119,7 +119,7 @@ pub async fn verify(
                 .await?;
                 headers.insert(
                     SET_COOKIE,
-                    HeaderValue::from_str(&format!("_Host_lws_token={}", &token.token))?,
+                    HeaderValue::from_str(&format!("_Host_token={}", &token.token))?,
                 );
                 Ok((
                     headers,
