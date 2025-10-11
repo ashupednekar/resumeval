@@ -6,7 +6,7 @@ use serde_json::{Value, json};
 
 use crate::{
     pkg::{
-        internal::{adaptors::jobs::{mutators::JobMutator, spec::JobEntry}, auth::User},
+        internal::{adaptors::jobs::{mutators::JobMutator, selectors::JobSelector, spec::JobEntry}, auth::User},
         server::state::AppState,
     },
     prelude::Result,
@@ -37,7 +37,6 @@ pub struct GenerateJobInput {
     pub url: String,
 }
 
-
 pub async fn create(
     State(state): State<AppState>,
     Extension(user): Extension<Arc<User>>,
@@ -65,9 +64,9 @@ pub async fn generate_from_url(
 }
 
 pub async fn list(
-    State(_state): State<AppState>,
-    Extension(_user): Extension<Arc<User>>,
+    State(state): State<AppState>,
 ) -> Result<Json<Vec<JobEntry>>> {
-    // Placeholder hardcoded jobs
-    Ok(Json(vec![]))
+    let mut tx = state.db_pool.begin().await?;
+    let jobs = JobSelector::new(&mut *tx).get_all().await?;
+    Ok(Json(jobs))
 }

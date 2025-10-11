@@ -1,8 +1,8 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
 
-#[derive(Deserialize, FromRow)]
+#[derive(Serialize, Deserialize, FromRow)]
 pub struct JobEntry {
     pub title: String,
     pub department: String,

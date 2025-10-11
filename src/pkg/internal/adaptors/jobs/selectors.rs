@@ -1,6 +1,7 @@
 use sqlx::PgConnection;
 
-use crate::{prelude::Result, internal::adaptors::jobs::spec::JobEntry};
+use crate::prelude::Result;
+use crate::pkg::internal::adaptors::jobs::spec::JobEntry;
 
 
 pub struct JobSelector<'a>{
