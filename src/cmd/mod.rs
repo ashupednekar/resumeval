@@ -4,7 +4,7 @@ use clap::{Parser, Subcommand};
 mod migrate;
 
 #[derive(Parser)]
-#[command(about = "starts lite web services")]
+#[command(about = "starts resumeval")]
 struct Cmd {
     #[command(subcommand)]
     command: Option<SubCommandType>,

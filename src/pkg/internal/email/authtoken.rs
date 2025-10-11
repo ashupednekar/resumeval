@@ -83,9 +83,10 @@ impl<'a> Display for AuthnCodeTemplate<'a> {
 
 impl<'a> SendEmail for AuthnCodeTemplate<'a> {
     fn send(&self, email: &str) -> crate::prelude::Result<()> {
+        tracing::debug!("TOKEN: {}", &self);
         send_email(
             &email,
-            "Here's your LWS authentication code",
+            "Here's your ResumeEval authentication code",
             &format!("{}", &self),
             true,
         )?;

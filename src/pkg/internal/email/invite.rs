@@ -74,7 +74,7 @@ impl Display for ShowInvite {
                     </div>
                     <div class="content">
                         <p>Hello,</p>
-                        <p>{} has invited you to join their project on Lite Web Services.</p>
+                        <p>{} has invited you to join their project on ResumeEval.</p>
                         
                         <div class="project-info">
                             <h2>{}</h2>
@@ -90,7 +90,7 @@ impl Display for ShowInvite {
                         <p>If you did not expect this invitation, you can safely ignore this email.</p>
                     </div>
                     <div class="footer">
-                        <p>Lite Web Services</p>
+                        <p>ResumeEval</p>
                         <p>&copy; 2023 All rights reserved</p>
                     </div>
                 </div>
