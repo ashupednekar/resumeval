@@ -1,12 +1,303 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
-  <head>
-  <title>Verify Your Email - ResumEval</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.2/dist/basecoat.cdn.min.css">
-<script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.2/dist/js/all.min.js" defer></script>
-  </head>
-  <body>
-
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Your Email - resumEval</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            border: "hsl(var(--border))",
+            input: "hsl(var(--input))",
+            ring: "hsl(var(--ring))",
+            background: "hsl(var(--background))",
+            foreground: "hsl(var(--foreground))",
+            primary: {
+              DEFAULT: "hsl(var(--primary))",
+              foreground: "hsl(var(--primary-foreground))",
+            },
+            secondary: {
+              DEFAULT: "hsl(var(--secondary))",
+              foreground: "hsl(var(--secondary-foreground))",
+            },
+            muted: {
+              DEFAULT: "hsl(var(--muted))",
+              foreground: "hsl(var(--muted-foreground))",
+            },
+            card: {
+              DEFAULT: "hsl(var(--card))",
+              foreground: "hsl(var(--card-foreground))",
+            },
+          },
+          borderRadius: {
+            lg: "var(--radius)",
+            md: "calc(var(--radius) - 2px)",
+            sm: "calc(var(--radius) - 4px)",
+          },
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+  <script src="https://unpkg.com/alpinejs@3.13.0/dist/cdn.min.js" defer></script>
+  <script>
+    document.addEventListener('alpine:init', () => {
+      Alpine.store('theme', {
+        dark: localStorage.getItem('theme') === 'dark' || true,
+        toggle() {
+          this.dark = !this.dark;
+          document.documentElement.classList.toggle('dark', this.dark);
+          localStorage.setItem('theme', this.dark ? 'dark' : 'light');
+        }
+      });
+      document.documentElement.classList.toggle('dark', Alpine.store('theme').dark);
+    });
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --background: 0 0% 100%;
+      --foreground: 222.2 84% 4.9%;
+      --card: 0 0% 100%;
+      --card-foreground: 222.2 84% 4.9%;
+      --primary: 222.2 47.4% 11.2%;
+      --primary-foreground: 210 40% 98%;
+      --secondary: 210 40% 96%;
+      --secondary-foreground: 222.2 84% 4.9%;
+      --muted: 210 40% 96%;
+      --muted-foreground: 215.4 16.3% 46.9%;
+      --border: 214.3 31.8% 91.4%;
+      --input: 214.3 31.8% 91.4%;
+      --ring: 222.2 84% 4.9%;
+      --radius: 0.5rem;
+    }
+    .dark {
+      --background: 0 0% 3.9%;
+      --foreground: 0 0% 98%;
+      --card: 0 0% 3.9%;
+      --card-foreground: 0 0% 98%;
+      --primary: 0 0% 98%;
+      --primary-foreground: 0 0% 9%;
+      --secondary: 0 0% 14.9%;
+      --secondary-foreground: 0 0% 98%;
+      --muted: 0 0% 14.9%;
+      --muted-foreground: 0 0% 63.9%;
+      --border: 0 0% 14.9%;
+      --input: 0 0% 14.9%;
+      --ring: 0 0% 83.1%;
+    }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    input[type="text"].otp-input::-webkit-outer-spin-button,
+    input[type="text"].otp-input::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type="text"].otp-input { -moz-appearance: textfield; }
+  </style>
+</head>
+<body class="bg-background text-foreground min-h-screen">
+  <div class="min-h-screen flex items-center justify-center px-4">
+    <div class="max-w-md w-full bg-card rounded-lg border shadow-lg p-8 flex flex-col items-center">
+      <!-- Logo/Header -->
+      <div class="w-full text-center mb-8">
+        <div class="flex items-center justify-center mb-4">
+          <div class="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
+            <i class="fas fa-file-alt text-primary-foreground text-xl"></i>
+          </div>
+        </div>
+        <h1 class="text-2xl font-bold text-card-foreground">resumEval</h1>
+        <h2 class="mt-2 text-xl font-semibold text-muted-foreground">Verify Your Email</h2>
+      </div>
+      <!-- Verification Form -->
+      <div x-data="{
+        digits: ['', '', '', '', '', ''],
+        email: '',
+        name: '',
+        showEmailInput: false,
+        showNameInput: false,
+        showOtpInput: false,
+        init() {
+          const cookies = document.cookie.split(';').map(c => c.trim());
+          const emailCookie = cookies.find(c => c.startsWith('_Host_email='));
+          if (emailCookie) {
+            this.email = decodeURIComponent(emailCookie.split('=')[1]);
+            this.showOtpInput = true;
+            this.showEmailInput = false;
+            this.showNameInput = false;
+          } else {
+            this.showEmailInput = true;
+            this.showNameInput = true;
+            this.showOtpInput = false;
+          }
+        },
+        handlePaste(e) {
+          e.preventDefault();
+          const paste = (e.clipboardData || window.clipboardData).getData('text');
+          const digits = paste.replace(/\D/g, '').slice(0, 6).split('');
+          
+          for (let i = 0; i < 6; i++) {
+            this.digits[i] = digits[i] || '';
+          }
+          
+          if (digits.length === 6) {
+            this.submitCode();
+          } else if (digits.length > 0) {
+            const lastIndex = Math.min(digits.length - 1, 5);
+            this.$refs['d' + lastIndex].focus();
+          }
+        },
+        setDigit(i, e) {
+          if (e.key.length === 1 && /\d/.test(e.key)) {
+            this.digits[i] = e.key;
+            if (i < 5 && this.$refs['d'+(i+1)]) {
+              this.$refs['d'+(i+1)].focus();
+            }
+            if (this.digits.join('').length === 6) {
+              this.submitCode();
+            }
+            e.preventDefault();
+          } else if (e.key === 'Backspace') {
+            if (this.digits[i]) {
+              this.digits[i] = '';
+            } else if (i > 0) {
+              this.digits[i-1] = '';
+              this.$refs['d'+(i-1)].focus();
+            }
+            e.preventDefault();
+          } else if (e.key === 'ArrowLeft' && i > 0) {
+            this.$refs['d'+(i-1)].focus();
+            e.preventDefault();
+          } else if (e.key === 'ArrowRight' && i < 5) {
+            this.$refs['d'+(i+1)].focus();
+            e.preventDefault();
+          }
+        },
+        submitCode() {
+          let code = this.digits.join('');
+          if (code.length === 6) {
+            this.$refs.codeInput.value = code;
+            this.$refs.verifyForm.requestSubmit();
+          }
+        },
+        async resendCode() {
+          try {
+            await fetch('/signup', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: this.email, name: this.name })
+            });
+            // Optionally show success message
+          } catch (e) {
+            console.error('Failed to resend code:', e);
+          }
+        }
+      }" class="w-full">
+        <div x-show="showEmailInput || showNameInput" x-cloak>
+          <form
+            hx-post="/signup"
+            hx-target="#signup-error"
+            hx-swap="innerHTML"
+            hx-on::after-request="if(event.detail.successful) { 
+              showEmailInput = false;
+              showNameInput = false;
+              showOtpInput = true;
+            }"
+            class="space-y-6"
+          >
+            <template x-if="showEmailInput">
+              <div>
+                <label for="email" class="block text-sm font-medium text-card-foreground mb-2">Email Address</label>
+                <input type="email" id="email" name="email" x-model="email" class="w-full h-12 px-3 text-base rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors" placeholder="Enter your email" required>
+              </div>
+            </template>
+            <template x-if="showNameInput">
+              <div>
+                <label for="name" class="block text-sm font-medium text-card-foreground mb-2">Full Name</label>
+                <input type="text" id="name" name="name" x-model="name" class="w-full h-12 px-3 text-base rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors" placeholder="Enter your full name" required>
+              </div>
+            </template>
+            <div id="signup-error" class="text-red-500 text-sm"></div>
+            <button
+              type="submit"
+              class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="!email || !name"
+            >
+              Continue
+            </button>
+          </form>
+        </div>
+        <div x-show="showOtpInput" x-cloak x-effect="if(showOtpInput && $refs['d0']) { $refs['d0'].focus(); }">
+          <div class="text-center mb-6">
+            <p class="text-muted-foreground text-sm mb-2">
+              We've sent a 6-digit verification code to
+            </p>
+            <p class="font-medium text-card-foreground" x-text="email"></p>
+          </div>
+          
+          <form
+            x-ref="verifyForm"
+            hx-post="/verify"
+            hx-target="#code-error"
+            hx-swap="innerHTML"
+            class="space-y-6"
+            @submit.prevent="submitCode"
+          >
+            <input type="hidden" name="code" x-ref="codeInput">
+            
+            <div class="space-y-4">
+              <label class="block text-sm font-medium text-card-foreground text-center">
+                Enter verification code
+              </label>
+              <div class="flex justify-center gap-2" @paste="handlePaste($event)">
+                <template x-for="(digit, i) in digits" :key="i">
+                  <input
+                    type="text"
+                    maxlength="1"
+                    class="otp-input w-12 h-12 text-xl text-center rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
+                    :autofocus="i === 0"
+                    x-model="digits[i]"
+                    x-ref="'d'+i"
+                    @keydown="setDigit(i, $event)"
+                    @focus="$event.target.select()"
+                    inputmode="numeric"
+                    autocomplete="one-time-code"
+                  >
+                </template>
+              </div>
+            </div>
+            
+            <div id="code-error" class="text-sm text-red-500"></div>
+            
+            <button
+              type="submit"
+              class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="digits.join('').length !== 6"
+            >
+              <span x-show="digits.join('').length !== 6">Enter 6-digit code</span>
+              <span x-show="digits.join('').length === 6">Verify Email</span>
+            </button>
+          </form>
+          
+          <div class="mt-6 text-center">
+            <p class="text-sm text-muted-foreground">
+              Didn't receive the code?
+              <button 
+                type="button" 
+                class="font-medium text-primary hover:text-primary/80 underline underline-offset-4"
+                @click="resendCode()"
+              >
+                Resend code
+              </button>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
 </html>
-

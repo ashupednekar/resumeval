@@ -13,6 +13,7 @@ use crate::{
     },
     prelude::Result,
 };
+use standard_error::StandardError;
 
 pub async fn home(
     State(state): State<AppState>,
@@ -26,4 +27,12 @@ pub async fn home(
     };
 
     Ok(Html(template.render()?))
+}
+
+pub async fn otp(
+    State(_state): State<AppState>,
+) -> Result<Html<String>> {
+    let html = std::fs::read_to_string("templates/otp.html")
+        .map_err(|e| StandardError::new(&format!("UI-001: {}", e)))?;
+    Ok(Html(html))
 }

@@ -121,6 +121,7 @@ pub async fn verify(
                     SET_COOKIE,
                     HeaderValue::from_str(&format!("_Host_token={}", &token.token))?,
                 );
+                headers.insert("HX-Redirect", HeaderValue::from_str("/")?);
                 Ok((
                     headers,
                     Html(
@@ -134,7 +135,7 @@ pub async fn verify(
             Ok((
                 headers,
                 Html(
-                    "<div class='text-green-600 text-center text-lg'>No active token found, sent new one!</div>"
+                    r#"<div id='code-error' class='text-red-500 text-center text-sm mt-2'>Code expired. New code sent to your email.</div>"#
                         .to_string(),
                 ),
             ))

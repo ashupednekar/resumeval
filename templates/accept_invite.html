@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accept Project Invitation - resumEval</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            border: "hsl(var(--border))",
+            input: "hsl(var(--input))",
+            ring: "hsl(var(--ring))",
+            background: "hsl(var(--background))",
+            foreground: "hsl(var(--foreground))",
+            primary: {
+              DEFAULT: "hsl(var(--primary))",
+              foreground: "hsl(var(--primary-foreground))",
+            },
+            secondary: {
+              DEFAULT: "hsl(var(--secondary))",
+              foreground: "hsl(var(--secondary-foreground))",
+            },
+            muted: {
+              DEFAULT: "hsl(var(--muted))",
+              foreground: "hsl(var(--muted-foreground))",
+            },
+            card: {
+              DEFAULT: "hsl(var(--card))",
+              foreground: "hsl(var(--card-foreground))",
+            },
+          },
+          borderRadius: {
+            lg: "var(--radius)",
+            md: "calc(var(--radius) - 2px)",
+            sm: "calc(var(--radius) - 4px)",
+          },
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/alpinejs@3.13.0/dist/cdn.min.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --background: 0 0% 100%;
+      --foreground: 222.2 84% 4.9%;
+      --card: 0 0% 100%;
+      --card-foreground: 222.2 84% 4.9%;
+      --primary: 222.2 47.4% 11.2%;
+      --primary-foreground: 210 40% 98%;
+      --secondary: 210 40% 96%;
+      --secondary-foreground: 222.2 84% 4.9%;
+      --muted: 210 40% 96%;
+      --muted-foreground: 215.4 16.3% 46.9%;
+      --border: 214.3 31.8% 91.4%;
+      --input: 214.3 31.8% 91.4%;
+      --ring: 222.2 84% 4.9%;
+      --radius: 0.5rem;
+    }
+    .dark {
+      --background: 0 0% 3.9%;
+      --foreground: 0 0% 98%;
+      --card: 0 0% 3.9%;
+      --card-foreground: 0 0% 98%;
+      --primary: 0 0% 98%;
+      --primary-foreground: 0 0% 9%;
+      --secondary: 0 0% 14.9%;
+      --secondary-foreground: 0 0% 98%;
+      --muted: 0 0% 14.9%;
+      --muted-foreground: 0 0% 63.9%;
+      --border: 0 0% 14.9%;
+      --input: 0 0% 14.9%;
+      --ring: 0 0% 83.1%;
+    }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    [x-cloak] { display: none !important; }
+    .fade-enter {
+      animation: fade-in 0.2s ease-out;
+    }
+    @keyframes fade-in {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body class="bg-background text-foreground min-h-screen">
+  <div x-data="inviteState()" class="min-h-screen flex flex-col items-center justify-center p-4">
+    <!-- Main Card -->
+    <div class="bg-card rounded-lg border shadow-lg max-w-md w-full p-8 fade-enter">
+      <!-- Logo -->
+      <div class="flex justify-center mb-8">
+        <div class="w-16 h-16 bg-primary rounded-lg flex items-center justify-center">
+          <i class="fas fa-file-alt text-primary-foreground text-2xl"></i>
+        </div>
+      </div>
+
+      <!-- Invitation Details -->
+      <div class="text-center mb-8">
+        <h1 class="text-2xl font-bold text-card-foreground mb-2">Project Invitation</h1>
+        <p class="text-muted-foreground">
+          <span x-text="inviter"></span> has invited you to join their project
+        </p>
+        <div class="mt-4 p-4 bg-muted rounded-lg border">
+          <h2 class="font-semibold text-lg text-card-foreground mb-1" x-text="projectName"></h2>
+          <p class="text-sm text-muted-foreground" x-text="projectDescription"></p>
+        </div>
+      </div>
+
+      <!-- Status Message -->
+      <div x-show="status" class="mt-6">
+        <div x-show="status === 'success'" class="bg-green-50 text-green-800 p-4 rounded-lg border border-green-200">
+          <div class="flex items-center">
+            <i class="fas fa-check-circle mr-2"></i>
+            <p>Successfully joined the project! Redirecting to home page...</p>
+          </div>
+        </div>
+        <div x-show="status === 'error'" class="bg-red-50 text-red-800 p-4 rounded-lg border border-red-200">
+          <div class="flex items-center">
+            <i class="fas fa-exclamation-circle mr-2"></i>
+            <p x-text="errorMessage"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Home Button -->
+      <div class="mt-6 text-center">
+        <a href="/" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring transition-colors">
+          <i class="fas fa-home mr-2"></i>
+          Go to Home
+        </a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="mt-8 text-center text-sm text-muted-foreground">
+      <p>resumEval</p>
+      <p class="mt-1">&copy; 2025 All rights reserved</p>
+    </div>
+  </div>
+
+  <script>
+    function inviteState() {
+      return {
+        status: null,
+        errorMessage: '',
+        inviter: '{{ inviter }}',
+        projectName: '{{ project_name }}',
+        projectDescription: '{{ project_description }}',
+        async init() {
+          try {
+            const response = await fetch('/project/accept', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                invite_id: '{{ invite_id }}'
+              })
+            });
+            
+            if (response.ok) {
+              this.status = 'success';
+              setTimeout(() => {
+                window.location.href = '/';
+              }, 2000);
+            } else {
+              const data = await response.json();
+              this.status = 'error';
+              this.errorMessage = data.message || 'Failed to accept invitation. Please try again.';
+            }
+          } catch (error) {
+            this.status = 'error';
+            this.errorMessage = 'An unexpected error occurred. Please try again.';
+          }
+        }
+      };
+    }
+  </script>
+</body>
+</html> 

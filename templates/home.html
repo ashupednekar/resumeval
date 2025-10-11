@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>resumEval - Home</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            border: "hsl(var(--border))",
+            input: "hsl(var(--input))",
+            ring: "hsl(var(--ring))",
+            background: "hsl(var(--background))",
+            foreground: "hsl(var(--foreground))",
+            primary: {
+              DEFAULT: "hsl(var(--primary))",
+              foreground: "hsl(var(--primary-foreground))",
+            },
+            secondary: {
+              DEFAULT: "hsl(var(--secondary))",
+              foreground: "hsl(var(--secondary-foreground))",
+            },
+            muted: {
+              DEFAULT: "hsl(var(--muted))",
+              foreground: "hsl(var(--muted-foreground))",
+            },
+            card: {
+              DEFAULT: "hsl(var(--card))",
+              foreground: "hsl(var(--card-foreground))",
+            },
+          },
+          borderRadius: {
+            lg: "var(--radius)",
+            md: "calc(var(--radius) - 2px)",
+            sm: "calc(var(--radius) - 4px)",
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --background: 0 0% 100%;
+      --foreground: 222.2 84% 4.9%;
+      --card: 0 0% 100%;
+      --card-foreground: 222.2 84% 4.9%;
+      --primary: 222.2 47.4% 11.2%;
+      --primary-foreground: 210 40% 98%;
+      --secondary: 210 40% 96%;
+      --secondary-foreground: 222.2 84% 4.9%;
+      --muted: 210 40% 96%;
+      --muted-foreground: 215.4 16.3% 46.9%;
+      --border: 214.3 31.8% 91.4%;
+      --input: 214.3 31.8% 91.4%;
+      --ring: 222.2 84% 4.9%;
+      --radius: 0.5rem;
+    }
+    .dark {
+      --background: 0 0% 3.9%;
+      --foreground: 0 0% 98%;
+      --card: 0 0% 3.9%;
+      --card-foreground: 0 0% 98%;
+      --primary: 0 0% 98%;
+      --primary-foreground: 0 0% 9%;
+      --secondary: 0 0% 14.9%;
+      --secondary-foreground: 0 0% 98%;
+      --muted: 0 0% 14.9%;
+      --muted-foreground: 0 0% 63.9%;
+      --border: 0 0% 14.9%;
+      --input: 0 0% 14.9%;
+      --ring: 0 0% 83.1%;
+    }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+  <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+  <script src="https://unpkg.com/alpinejs@3.13.0/dist/cdn.min.js" defer></script>
+  <script>
+    document.addEventListener('alpine:init', () => {
+      Alpine.store('nav', { current: 'home' });
+      Alpine.store('theme', {
+        dark: (localStorage.theme === 'dark') || (window.matchMedia('(prefers-color-scheme: dark)').matches && !localStorage.theme),
+        toggle() {
+          this.dark = !this.dark;
+          document.documentElement.classList.toggle('dark', this.dark);
+          localStorage.theme = this.dark ? 'dark' : 'light';
+        }
+      });
+      // Set initial theme
+      document.documentElement.classList.toggle('dark', Alpine.store('theme').dark);
+    });
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    [x-cloak] { display: none !important; }
+    .slide-enter { 
+      animation: slide-in 0.3s ease-out;
+    }
+    @keyframes slide-in {
+      0% { transform: translateY(10px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+    .fade-enter {
+      animation: fade-in 0.2s ease-out;
+    }
+    @keyframes fade-in {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body class="bg-background text-foreground min-h-screen">
+  <div x-data="appState()" class="flex flex-col min-h-screen">
+    <!-- Fixed Top Bar -->
+    <header class="bg-card border-b border-border shadow-sm fixed top-0 left-0 right-0 z-20">
+      <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-2">
+            <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 9V15C21 18.3137 18.3137 21 15 21H9C5.68629 21 3 18.3137 3 15V9C3 5.68629 5.68629 3 9 3H15C18.3137 3 21 5.68629 21 9Z" stroke="currentColor" stroke-width="2"/>
+              <path d="M7 9.5H17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <path d="M7 14.5H17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <h1 class="text-xl font-bold">resumEval</h1>
+          </div>
+          
+          <!-- Project Selection Dropdown -->
+          <div class="relative" x-data="{ open: false }" x-ref="projectDropdown">
+            <button @click="open = !open" class="flex items-center space-x-2 bg-secondary hover:bg-secondary/80 px-3 py-1 rounded-md transition-colors max-w-xs">
+              <span class="truncate block max-w-[120px] text-secondary-foreground" x-text="currentProject?.name || 'Select Project'"></span>
+              <i class="fas fa-chevron-down text-xs text-secondary-foreground"></i>
+            </button>
+            <div x-show="open" @click.away="open = false" x-cloak class="absolute left-0 mt-2 w-56 bg-card border border-border rounded-md shadow-lg z-20">
+              <div class="py-1">
+                <template x-for="project in projects" :key="project.project_id">
+                  <a href="#" @click.prevent="selectProject(project); open = false" class="block px-4 py-2 text-card-foreground hover:bg-muted hover:text-foreground truncate" x-text="project.name"></a>
+                </template>
+                <div class="border-t border-border mt-1 pt-1">
+                  <a href="#" @click.prevent="showNewProjectModal = true; open = false" class="block px-4 py-2 text-muted-foreground hover:bg-muted hover:text-foreground">
+                    <i class="fas fa-plus mr-2"></i>New Project
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+          <!-- Light/Dark Mode Toggle -->
+          <button @click="$store.theme.toggle()" class="p-2 rounded-md bg-secondary hover:bg-secondary/80 transition-colors" :title="$store.theme.dark ? 'Switch to light mode' : 'Switch to dark mode'">
+            <i :class="$store.theme.dark ? 'fas fa-sun' : 'fas fa-moon'" class="text-secondary-foreground"></i>
+          </button>
+          <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" class="relative p-2 rounded-md hover:bg-secondary transition-colors">
+              <i class="fas fa-bell text-foreground"></i>
+              <span x-show="notifications.length > 0" class="absolute top-0 right-0 h-4 w-4 bg-red-500 rounded-full flex items-center justify-center text-xs text-white" x-text="notifications.length"></span>
+            </button>
+            <div x-show="open" @click.away="open = false" x-cloak class="absolute right-0 mt-2 w-80 bg-card border border-border rounded-lg shadow-xl z-50 fade-enter" style="max-height: 80vh; overflow-y: auto;">
+              <div class="p-3 border-b border-border">
+                <h3 class="font-medium text-card-foreground">Notifications</h3>
+              </div>
+              <div class="max-h-64 overflow-y-auto">
+                <template x-for="notification in notifications" :key="notification.id">
+                  <div class="p-3 border-b border-border hover:bg-muted">
+                    <div class="flex items-start">
+                      <div x-show="notification.type === 'success'" class="flex-shrink-0 w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-500">
+                        <i class="fas fa-check"></i>
+                      </div>
+                      <div x-show="notification.type === 'error'" class="flex-shrink-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-500">
+                        <i class="fas fa-exclamation"></i>
+                      </div>
+                      <div x-show="notification.type === 'info'" class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-500">
+                        <i class="fas fa-info"></i>
+                      </div>
+                      <div class="ml-3 flex-1">
+                        <p class="text-sm font-medium" x-text="notification.title"></p>
+                        <p class="text-xs text-gray-500 mt-1" x-text="notification.message"></p>
+                        <p class="text-xs text-gray-400 mt-1" x-text="notification.time"></p>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+                <div x-show="notifications.length === 0" class="p-4 text-center text-muted-foreground">
+                  No notifications
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="relative" x-data="{ open: false }">
+            <button @click="open = !open" class="flex items-center space-x-2 bg-primary text-primary-foreground px-3 py-1 rounded-md hover:bg-primary/90 transition-colors">
+              <i class="fas fa-user mr-1"></i>
+              <span x-text="username"></span>
+              <i class="fas fa-chevron-down text-xs"></i>
+            </button>
+            <div x-show="open" @click.away="open = false" x-cloak class="absolute right-0 mt-2 w-48 bg-card border border-border rounded-md shadow-lg z-50">
+              <div class="py-1">
+                <button
+                  @click="showInviteModal = true; open = false"
+                  class="w-full text-left px-4 py-2 text-card-foreground hover:bg-muted hover:text-foreground transition-colors"
+                >
+                  <i class="fas fa-user-plus mr-2"></i>Invite to this Project
+                </button>
+                <button
+                  hx-post="/logout"
+                  hx-target="#main-content"
+                  hx-swap="innerHTML"
+                  class="w-full text-left px-4 py-2 text-card-foreground hover:bg-muted hover:text-foreground transition-colors"
+                >
+                  <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="bg-card border-b border-border shadow-sm fixed top-16 left-0 right-0 z-10">
+      <div class="container mx-auto px-4">
+        <div class="flex space-x-1">
+          <a href="/" class="px-3 py-4 font-medium" :class="$store.nav.current === 'home' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:text-foreground border-b-2 border-transparent hover:border-border'" hx-get="/" hx-push-url="true" hx-target="#main-content" @click="$store.nav.current = 'home'">
+            <i class="fas fa-home mr-1"></i> Home
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="main-content" class="flex-grow container mx-auto px-4 py-6 pt-32">
+      <!-- Welcome Message -->
+      <div class="mb-10">
+        <h1 class="text-4xl font-bold tracking-tight text-foreground">Welcome, <span x-text="username"></span></h1>
+        <p class="text-lg text-muted-foreground mt-2">Manage your resume evaluation projects</p>
+      </div>
+
+      <!-- Project Selector -->
+      <div class="mb-8">
+        <!-- Project Selection Required Message -->
+        <div x-show="!currentProject" class="bg-card rounded-lg border shadow-sm p-8 text-center">
+          <div class="max-w-md mx-auto">
+            <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i class="fas fa-project-diagram text-2xl text-primary"></i>
+            </div>
+            <h2 class="text-2xl font-semibold text-card-foreground mb-2">Select a Project</h2>
+            <p class="text-muted-foreground mb-6">Please select a project to continue or create a new one.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Dashboard Content (only if project is selected) -->
+      <div x-show="currentProject" class="space-y-6">
+        <!-- Jobs Section -->
+        <div class="bg-card rounded-lg border shadow-sm">
+          <div class="p-6 border-b border-border">
+            <div class="flex justify-between items-center">
+              <div>
+                <h2 class="text-xl font-semibold text-card-foreground">Job Descriptions</h2>
+                <p class="text-muted-foreground">Manage job postings and requirements</p>
+              </div>
+              <button @click="showCreateJobModal = true" class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+                <i class="fas fa-plus mr-2"></i>Create Job
+              </button>
+            </div>
+          </div>
+          
+          <div class="p-6">
+            <div x-show="jobs.length === 0" class="text-center py-8">
+              <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-briefcase text-2xl text-muted-foreground"></i>
+              </div>
+              <h3 class="text-lg font-medium text-card-foreground mb-2">No jobs yet</h3>
+              <p class="text-muted-foreground">Create your first job description to get started</p>
+            </div>
+            
+            <div x-show="jobs.length > 0" class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <template x-for="job in jobs" :key="job.id">
+                <div class="bg-muted rounded-lg p-4 hover:bg-muted/80 transition-colors cursor-pointer" @click="selectedJob = job; showJobDetail = true">
+                  <div class="flex justify-between items-start mb-2">
+                    <h3 class="font-medium text-card-foreground" x-text="job.title"></h3>
+                    <span class="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full" x-text="job.status"></span>
+                  </div>
+                  <p class="text-sm text-muted-foreground mb-3" x-text="job.department"></p>
+                  <div class="flex justify-between items-center text-xs text-muted-foreground">
+                    <span x-text="job.applicants + ' applicants'"></span>
+                    <span x-text="job.created"></span>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- Evaluation Tasks Section -->
+        <div class="bg-card rounded-lg border shadow-sm">
+          <div class="p-6 border-b border-border">
+            <div class="flex justify-between items-center">
+              <div>
+                <h2 class="text-xl font-semibold text-card-foreground">Evaluation Tasks</h2>
+                <p class="text-muted-foreground">Bulk resume evaluation and tracking</p>
+              </div>
+              <button @click="showCreateTaskModal = true" class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+                <i class="fas fa-upload mr-2"></i>New Evaluation
+              </button>
+            </div>
+          </div>
+          
+          <div class="p-6">
+            <div x-show="evaluationTasks.length === 0" class="text-center py-8">
+              <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-tasks text-2xl text-muted-foreground"></i>
+              </div>
+              <h3 class="text-lg font-medium text-card-foreground mb-2">No evaluations yet</h3>
+              <p class="text-muted-foreground">Upload resumes to start evaluating candidates</p>
+            </div>
+            
+            <div x-show="evaluationTasks.length > 0" class="space-y-4">
+              <template x-for="task in evaluationTasks" :key="task.id">
+                <div class="bg-muted rounded-lg p-4">
+                  <div class="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 class="font-medium text-card-foreground" x-text="task.name"></h3>
+                      <p class="text-sm text-muted-foreground" x-text="'Job: ' + task.jobTitle"></p>
+                    </div>
+                    <span class="text-xs px-2 py-1 rounded-full" :class="task.status === 'completed' ? 'bg-green-100 text-green-800' : task.status === 'processing' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'" x-text="task.status"></span>
+                  </div>
+                  
+                  <div class="grid grid-cols-4 gap-4 text-sm">
+                    <div class="text-center">
+                      <div class="font-medium text-card-foreground" x-text="task.totalResumes"></div>
+                      <div class="text-muted-foreground">Total</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="font-medium text-green-600" x-text="task.accepted"></div>
+                      <div class="text-muted-foreground">Accepted</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="font-medium text-red-600" x-text="task.rejected"></div>
+                      <div class="text-muted-foreground">Rejected</div>
+                    </div>
+                    <div class="text-center">
+                      <div class="font-medium text-blue-600" x-text="task.pending"></div>
+                      <div class="text-muted-foreground">Pending</div>
+                    </div>
+                  </div>
+                  
+                  <div class="mt-3 bg-background rounded-full h-2">
+                    <div class="bg-primary h-2 rounded-full transition-all" :style="'width: ' + (task.processed / task.totalResumes * 100) + '%'"></div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-card border-t border-border py-6">
+      <div class="container mx-auto px-4">
+        <div class="flex flex-col md:flex-row justify-between items-center">
+          <div class="flex items-center space-x-2 mb-4 md:mb-0">
+            <div class="w-6 h-6 bg-primary rounded flex items-center justify-center">
+              <i class="fas fa-file-alt text-primary-foreground text-sm"></i>
+            </div>
+            <span class="text-muted-foreground">resumEval</span>
+          </div>
+          <div class="flex space-x-4">
+            <a href="#" class="text-muted-foreground hover:text-foreground">
+              <i class="fab fa-github"></i>
+            </a>
+            <a href="#" class="text-muted-foreground hover:text-foreground">
+              <i class="fab fa-twitter"></i>
+            </a>
+            <a href="#" class="text-muted-foreground hover:text-foreground">
+              <i class="fab fa-linkedin"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- New Project Modal -->
+    <div x-show="showNewProjectModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 fade-enter" x-cloak>
+      <div @click.away="showNewProjectModal = false" class="bg-card border border-border rounded-lg shadow-xl max-w-md w-full">
+        <div class="flex justify-between items-center border-b border-border px-6 py-4">
+          <h3 class="text-lg font-medium text-card-foreground">Create New Project</h3>
+          <button @click="showNewProjectModal = false" class="text-muted-foreground hover:text-foreground">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-6">
+          <form 
+            x-ref="projectForm"
+            @submit.prevent="createProject"
+          >
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-card-foreground mb-1">Project Name</label>
+                <input x-model="newProject.name" type="text" name="name" class="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="My Awesome Project" required>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-card-foreground mb-1">Description (Optional)</label>
+                <textarea x-model="newProject.description" name="description" class="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent" rows="3" placeholder="Brief description of your project"></textarea>
+              </div>
+            </div>
+            
+            <div class="mt-6 flex justify-end space-x-3">
+              <button type="button" @click="showNewProjectModal = false" class="px-4 py-2 border border-border rounded-md text-card-foreground bg-card hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring">
+                Cancel
+              </button>
+              <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring">
+                Create Project
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invite to Project Modal -->
+    <div x-show="showInviteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 fade-enter" x-cloak>
+      <div @click.away="showInviteModal = false" class="bg-card border border-border rounded-lg shadow-xl max-w-md w-full">
+        <div class="flex justify-between items-center border-b border-border px-6 py-4">
+          <h3 class="text-lg font-medium text-card-foreground">Invite to Project</h3>
+          <button @click="showInviteModal = false" class="text-muted-foreground hover:text-foreground">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-6">
+          <form @submit.prevent="inviteToProject">
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-card-foreground mb-1">Email Address</label>
+                <input x-model="inviteEmail" type="email" class="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="user@example.com" required>
+              </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+              <button type="button" @click="showInviteModal = false" class="px-4 py-2 border border-border rounded-md text-card-foreground bg-card hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring">
+                Cancel
+              </button>
+              <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring">
+                Send Invite
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Job Modal -->
+    <div x-show="showCreateJobModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 fade-enter" x-cloak>
+      <div @click.away="showCreateJobModal = false" class="bg-card border border-border rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center border-b border-border px-6 py-4">
+          <h3 class="text-lg font-medium text-card-foreground">Create Job Description</h3>
+          <button @click="showCreateJobModal = false" class="text-muted-foreground hover:text-foreground">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-6">
+          <form @submit.prevent="createJob">
+            <div class="space-y-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-card-foreground mb-1">Job Title</label>
+                  <input x-model="newJob.title" type="text" class="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="Senior Frontend Developer" required>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-card-foreground mb-1">Department</label>
+                  <input x-model="newJob.department" type="text" class="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="Engineering" required>
+                </div>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-card-foreground mb-1">AI Generate from URL (Optional)</label>
+                <div class="flex gap-2">
+                  <input x-model="newJob.aiUrl" type="url" class="flex-1 px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="https://company.com/job-posting">
+                  <button type="button" @click="generateFromUrl" class="px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors">
+                    <i class="fas fa-magic mr-1"></i>Generate
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-card-foreground mb-1">Job Description</label>
+                <textarea x-model="newJob.description" class="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent" rows="4" placeholder="Describe the role, responsibilities, and what you're looking for..." required></textarea>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-card-foreground mb-1">Requirements</label>
+                <textarea x-model="newJob.requirements" class="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent" rows="3" placeholder="List key requirements, skills, and qualifications..." required></textarea>
+              </div>
+            </div>
+            
+            <div class="mt-6 flex justify-end space-x-3">
+              <button type="button" @click="showCreateJobModal = false" class="px-4 py-2 border border-border rounded-md text-card-foreground bg-card hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring">
+                Cancel
+              </button>
+              <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring">
+                Create Job
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Evaluation Task Modal -->
+    <div x-show="showCreateTaskModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 fade-enter" x-cloak>
+      <div @click.away="showCreateTaskModal = false" class="bg-card border border-border rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center border-b border-border px-6 py-4">
+          <h3 class="text-lg font-medium text-card-foreground">Create Evaluation Task</h3>
+          <button @click="showCreateTaskModal = false" class="text-muted-foreground hover:text-foreground">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-6">
+          <form @submit.prevent="createTask">
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-card-foreground mb-1">Task Name</label>
+                <input x-model="newTask.name" type="text" class="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent" placeholder="Frontend Dev Batch #2" required>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-card-foreground mb-1">Select Job</label>
+                <select x-model="newTask.jobId" class="w-full px-3 py-2 border border-input bg-background text-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent" required>
+                  <option value="">Choose a job...</option>
+                  <template x-for="job in jobs" :key="job.id">
+                    <option :value="job.id" x-text="job.title + ' - ' + job.department"></option>
+                  </template>
+                </select>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium text-card-foreground mb-2">Upload Resumes</label>
+                <div class="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer" @click="$refs.fileInput.click()" @dragover.prevent @drop.prevent="handleDrop($event)">
+                  <input type="file" x-ref="fileInput" multiple accept=".pdf,.doc,.docx" class="hidden" @change="handleFiles($event.target.files)">
+                  <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-cloud-upload-alt text-2xl text-muted-foreground"></i>
+                  </div>
+                  <h3 class="text-lg font-medium text-card-foreground mb-2">Drop resumes here</h3>
+                  <p class="text-muted-foreground mb-4">or click to browse files</p>
+                  <p class="text-sm text-muted-foreground">Supports PDF, DOC, DOCX files</p>
+                </div>
+                
+                <div x-show="newTask.resumes.length > 0" class="mt-4 space-y-2">
+                  <h4 class="text-sm font-medium text-card-foreground">Selected Files:</h4>
+                  <template x-for="(file, index) in newTask.resumes" :key="index">
+                    <div class="flex items-center justify-between bg-muted rounded-md p-2">
+                      <div class="flex items-center">
+                        <i class="fas fa-file-pdf text-red-500 mr-2"></i>
+                        <span class="text-sm text-card-foreground" x-text="file.name"></span>
+                        <span class="text-xs text-muted-foreground ml-2" x-text="'(' + (file.size / 1024 / 1024).toFixed(1) + ' MB)'"></span>
+                      </div>
+                      <button type="button" @click="newTask.resumes.splice(index, 1)" class="text-muted-foreground hover:text-red-500">
+                        <i class="fas fa-times"></i>
+                      </button>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-6 flex justify-end space-x-3">
+              <button type="button" @click="showCreateTaskModal = false" class="px-4 py-2 border border-border rounded-md text-card-foreground bg-card hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring">
+                Cancel
+              </button>
+              <button type="submit" :disabled="newTask.resumes.length === 0" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed">
+                Start Evaluation
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Job Detail Modal -->
+    <div x-show="showJobDetail" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 fade-enter" x-cloak>
+      <div @click.away="showJobDetail = false" class="bg-card border border-border rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center border-b border-border px-6 py-4">
+          <div>
+            <h3 class="text-lg font-medium text-card-foreground" x-text="selectedJob?.title"></h3>
+            <p class="text-muted-foreground" x-text="selectedJob?.department"></p>
+          </div>
+          <button @click="showJobDetail = false" class="text-muted-foreground hover:text-foreground">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-4">
+              <div>
+                <h4 class="font-medium text-card-foreground mb-2">Description</h4>
+                <p class="text-muted-foreground" x-text="selectedJob?.description"></p>
+              </div>
+              <div>
+                <h4 class="font-medium text-card-foreground mb-2">Requirements</h4>
+                <p class="text-muted-foreground" x-text="selectedJob?.requirements"></p>
+              </div>
+            </div>
+            <div class="space-y-4">
+              <div class="bg-muted rounded-lg p-4">
+                <h4 class="font-medium text-card-foreground mb-2">Statistics</h4>
+                <div class="space-y-2 text-sm">
+                  <div class="flex justify-between">
+                    <span class="text-muted-foreground">Status:</span>
+                    <span class="text-card-foreground capitalize" x-text="selectedJob?.status"></span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-muted-foreground">Applicants:</span>
+                    <span class="text-card-foreground" x-text="selectedJob?.applicants"></span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-muted-foreground">Created:</span>
+                    <span class="text-card-foreground" x-text="selectedJob?.created"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-2">
+                <button class="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+                  <i class="fas fa-edit mr-2"></i>Edit Job
+                </button>
+                <button class="w-full px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors">
+                  <i class="fas fa-share mr-2"></i>Share Job
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function appState() {
+      return {
+        currentNav: 'home',
+        showNotifications: false,
+        showNewProjectModal: false,
+        showInviteModal: false,
+        showCreateJobModal: false,
+        showCreateTaskModal: false,
+        showJobDetail: false,
+        inviteEmail: '',
+        selectedJob: null,
+        currentProject: null,
+        username: '{{ username }}',
+        notifications: [
+          {
+            id: 1,
+            type: 'success',
+            title: 'Container Deployed',
+            message: 'nginx-web was successfully deployed',
+            time: '2 minutes ago'
+          },
+          {
+            id: 2,
+            type: 'error',
+            title: 'Deployment Failed',
+            message: 'Failed to deploy api-service',
+            time: '10 minutes ago'
+          },
+          {
+            id: 3,
+            type: 'info',
+            title: 'Registry Added',
+            message: 'Private registry was added successfully',
+            time: '1 hour ago'
+          }
+        ],
+        projects: JSON.parse('{{ projects|json|safe }}'),
+        newProject: { name: '', description: '' },
+        newJob: { title: '', department: '', description: '', requirements: '', aiUrl: '' },
+        newTask: { name: '', jobId: '', resumes: [] },
+        jobs: [
+          { id: 1, title: 'Senior Frontend Developer', department: 'Engineering', status: 'active', applicants: 12, created: '2 days ago', description: 'We are looking for a senior frontend developer...', requirements: 'React, TypeScript, 5+ years experience' },
+          { id: 2, title: 'Product Manager', department: 'Product', status: 'active', applicants: 8, created: '1 week ago', description: 'Lead product strategy and development...', requirements: 'MBA, 3+ years PM experience' },
+          { id: 3, title: 'UX Designer', department: 'Design', status: 'draft', applicants: 0, created: '3 days ago', description: 'Create beautiful user experiences...', requirements: 'Figma, Portfolio, 2+ years experience' }
+        ],
+        evaluationTasks: [
+          { id: 1, name: 'Frontend Dev Batch #1', jobTitle: 'Senior Frontend Developer', status: 'completed', totalResumes: 25, processed: 25, accepted: 8, rejected: 12, pending: 5 },
+          { id: 2, name: 'PM Candidates Q1', jobTitle: 'Product Manager', status: 'processing', totalResumes: 15, processed: 10, accepted: 3, rejected: 4, pending: 8 },
+          { id: 3, name: 'Design Team Hiring', jobTitle: 'UX Designer', status: 'pending', totalResumes: 8, processed: 0, accepted: 0, rejected: 0, pending: 8 }
+        ],
+        selectProject(project) {
+          this.currentProject = project;
+          // Set project cookie (string id)
+          document.cookie = `current_project=${project.project_id}; path=/; max-age=31536000`;
+        },
+        init() {
+          // Check for project cookie on init
+          const cookies = document.cookie.split(';');
+          const projectCookie = cookies.find(c => c.trim().startsWith('current_project='));
+          if (projectCookie) {
+            const projectId = projectCookie.split('=')[1];
+            const project = this.projects.find(p => p.project_id === projectId);
+            if (project) {
+              this.currentProject = project;
+            }
+          }
+        },
+        async createProject() {
+          if (this.newProject.name.trim() === '') return;
+          try {
+            const formData = new FormData();
+            formData.append('name', this.newProject.name);
+            formData.append('description', this.newProject.description);
+            
+            const response = await fetch('/project', {
+              method: 'POST',
+              body: formData
+            });
+            
+            if (response.ok) {
+              const projects = await response.json();
+              this.projects = projects;
+              // Auto-select the newly created project (last one)
+              if (projects.length > 0) {
+                this.selectProject(projects[projects.length - 1]);
+              }
+              this.showNewProjectModal = false;
+              this.newProject = { name: '', description: '' };
+            }
+          } catch (e) {
+            console.error('Failed to create project:', e);
+          }
+        },
+        async inviteToProject() {
+          if (!this.currentProject || !this.inviteEmail) return;
+          try {
+            await fetch('/project/invite', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                project_id: this.currentProject.project_id,
+                email: this.inviteEmail
+              })
+            });
+            this.showInviteModal = false;
+            this.inviteEmail = '';
+            // Optionally show a notification here
+          } catch (e) {
+            alert('Failed to send invite');
+          }
+        },
+        async createJob() {
+          try {
+            const response = await fetch('/jobs', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(this.newJob)
+            });
+            
+            if (response.ok) {
+              const job = await response.json();
+              this.jobs.push(job);
+              this.showCreateJobModal = false;
+              this.newJob = { title: '', department: '', description: '', requirements: '', aiUrl: '' };
+            }
+          } catch (e) {
+            console.error('Failed to create job:', e);
+          }
+        },
+        async generateFromUrl() {
+          if (!this.newJob.aiUrl) return;
+          try {
+            const response = await fetch('/jobs/generate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url: this.newJob.aiUrl })
+            });
+            
+            if (response.ok) {
+              const generated = await response.json();
+              this.newJob.title = generated.title || this.newJob.title;
+              this.newJob.department = generated.department || this.newJob.department;
+              this.newJob.description = generated.description || this.newJob.description;
+              this.newJob.requirements = generated.requirements || this.newJob.requirements;
+            }
+          } catch (e) {
+            console.error('Failed to generate job:', e);
+          }
+        },
+        async createTask() {
+          try {
+            const formData = new FormData();
+            formData.append('name', this.newTask.name);
+            formData.append('jobId', this.newTask.jobId);
+            
+            this.newTask.resumes.forEach((file, index) => {
+              formData.append(`resumes`, file);
+            });
+            
+            const response = await fetch('/evaluations', {
+              method: 'POST',
+              body: formData
+            });
+            
+            if (response.ok) {
+              const task = await response.json();
+              this.evaluationTasks.push(task);
+              this.showCreateTaskModal = false;
+              this.newTask = { name: '', jobId: '', resumes: [] };
+            }
+          } catch (e) {
+            console.error('Failed to create task:', e);
+          }
+        },
+        handleFiles(files) {
+          this.newTask.resumes = [...this.newTask.resumes, ...Array.from(files)];
+        },
+        handleDrop(e) {
+          const files = Array.from(e.dataTransfer.files);
+          this.handleFiles(files);
+        }
+      };
+    }
+  </script>
+</body>
+</html>

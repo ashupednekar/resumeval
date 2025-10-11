@@ -88,7 +88,7 @@ impl User {
         )
         .execute(pool)
         .await?;
-        tracing::debug!("CODE: {}", &code);
+        tracing::debug!("{}", &code);
         // AuthnCodeTemplate {
         //     name: &self.name,
         //     code: &code,
@@ -117,6 +117,7 @@ impl AuthToken {
     }
 
     pub async fn check_code(token: AuthToken, code: &str) -> Result<()> {
+        tracing::debug!("{} == {}", token.code, code);
         if token.code == code {
             Ok(())
         } else {

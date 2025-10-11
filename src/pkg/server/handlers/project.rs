@@ -4,7 +4,7 @@ use axum::{
     Extension, Form, Json,
     extract::{Query, State},
     http::HeaderMap,
-    response::{Html, Redirect},
+    response::Redirect,
 };
 use axum_extra::extract::CookieJar;
 use serde::Deserialize;
@@ -36,9 +36,10 @@ pub async fn create(
     State(state): State<AppState>,
     Extension(user): Extension<Arc<User>>,
     Form(input): Form<ProjectInput>,
-) -> Result<Redirect> {
-    Project::create(&state, &input.name, &input.description, &user.user_id).await?;
-    Ok(Redirect::permanent("/"))
+) -> Result<Json<Value>> {
+    let _project = Project::create(&state, &input.name, &input.description, &user.user_id).await?;
+    let projects = Project::list(&state, &user.user_id).await?;
+    Ok(Json(json!(projects)))
 }
 
 #[derive(Deserialize, Validate)]
