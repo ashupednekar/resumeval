@@ -52,7 +52,7 @@ impl<'a> ResumeMutator<'a> {
     pub async fn add_embedding(
         &mut self,
         resume_id: i32,
-        embeddings: Vector
+        embedding: Vector
     ) -> Result<ResumeEntry> {
         let row = sqlx::query_as::<_, ResumeEntry>(
             r#"

@@ -13,6 +13,7 @@ struct Cmd {
 #[derive(Subcommand)]
 enum SubCommandType {
     Listen,
+    Consume,
     Migrate,
 }
 
@@ -20,6 +21,9 @@ pub async fn run() -> Result<()> {
     let args = Cmd::parse();
     match args.command {
         Some(SubCommandType::Listen) => {
+            listen().await?;
+        }
+        Some(SubCommandType::Consume) => {
             listen().await?;
         }
         Some(SubCommandType::Migrate) => {

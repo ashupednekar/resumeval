@@ -12,7 +12,11 @@ impl<'a> JobMutator<'a> {
         JobMutator { pool }
     }
 
-    pub async fn create(&mut self, create_by: &str, job: CreateJobInput) -> Result<JobEntry> {
+    pub async fn create(
+        &mut self, 
+        create_by: &str, 
+        job: CreateJobInput
+    ) -> Result<JobEntry> {
         let row = sqlx::query_as::<_, JobEntry>(
             r#"
             INSERT INTO jobs (title, created_by, department, description, requirements, url)

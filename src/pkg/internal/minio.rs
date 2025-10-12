@@ -1,22 +1,9 @@
 use std::sync::Arc;
 
-use aws_sdk_s3::{Client, config::Region};
 use standard_error::{Interpolate, StandardError};
 
 use crate::prelude::Result;
 
-#[derive(Debug)]
-struct DefaultResolver {
-    endpoint: String,
-}
-
-impl DefaultResolver {
-    fn new(endpoint: &str) -> Self {
-        DefaultResolver {
-            endpoint: endpoint.to_string(),
-        }
-    }
-}
 
 #[async_trait::async_trait]
 pub trait S3Ops {

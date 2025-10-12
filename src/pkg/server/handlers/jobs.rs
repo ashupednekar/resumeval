@@ -9,7 +9,7 @@ use crate::{
     pkg::{
         internal::{
             adaptors::jobs::{mutators::JobMutator, selectors::JobSelector, spec::JobEntry},
-            ai::{fetch::process, generate::direct_query},
+            ai::{fetch::process, generate::GenerateOps},
             auth::User,
         },
         server::state::AppState,
@@ -50,7 +50,9 @@ pub async fn create(
     let job = JobMutator::new(&mut tx)
         .create(&user.user_id, input)
         .await?;
-    //TODO: trigger other stuff (llm indexing)
+    //TODO: pubsub maybe...
+    tokio::spawn(async move{
+    });
     tx.commit().await?;
     Ok(Json(job))
 }
@@ -87,7 +89,7 @@ pub async fn generate_from_url(
         "#,
         &jd
     );
-    let res = direct_query(&state.ai_client, &prompt, None).await?;
+    let res = state.ai_client.direct_query(&prompt, None).await?;
     let cleaned_json = res.trim_start_matches("```json").trim_end_matches("```");
     tracing::debug!("AI Result: \n {}", &cleaned_json);
     let position: Position = serde_json::from_str(cleaned_json)?;
