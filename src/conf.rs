@@ -24,7 +24,11 @@ pub struct Settings {
     pub ai_provider: String,
     pub ai_model: String,
     pub ai_key: String,
-    pub s3_bucket_name: String
+    pub s3_endpoint: String,
+    pub s3_access_key: String,
+    pub s3_secret_key: String,
+    pub s3_bucket_name: String,
+    pub s3_region: String,
 }
 
 impl Settings {

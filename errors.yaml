@@ -7,8 +7,6 @@ errors:
     detail_en_US: "Invalid code"
   - code: ERR-PROJ-001
     detail_en_US: "Invalid code"
-  - code: ERR-JOB-001
-    detail_en_US: "job not found: [err]"
   - code: ERR-AI-000
     detail_en_US: "Error initializing ai client"
   - code: ERR-AI-001
@@ -17,6 +15,10 @@ errors:
     detail_en_US: "Error getting chat completions [err]"
   - code: ERR-AI-003
     detail_en_US: "Error initializing embeddings [err]"
+  - code: ERR-AI-004
+    detail_en_US: "Error creating embeddings [err]"
+  - code: ERR-S3-004
+    detail_en_US: "Error creating bucket [err]"
   - code: EVAL-001
     detail_en_US: "Failed to read multipart field"
   - code: EVAL-002
