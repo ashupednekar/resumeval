@@ -37,28 +37,28 @@ impl Settings {
             .add_source(Environment::default())
             .build()?;
         let mut s: Settings = conf.try_deserialize()?;
-        match s.ai_provider.as_str(){
-        "ollama" => {
-            s.ai_key = "ollama".into();
-            s.ai_endpoint = "http://localhost:11434/v1".into();
-            if s.ai_model.is_empty(){
-                s.ai_model = "gemma3:12b".into();
+        match s.ai_provider.as_str() {
+            "ollama" => {
+                s.ai_key = "ollama".into();
+                s.ai_endpoint = "http://localhost:11434/v1".into();
+                if s.ai_model.is_empty() {
+                    s.ai_model = "gemma3:12b".into();
+                }
             }
-        },
-        "openai" => {
-            s.ai_endpoint = "https://api.openai.com/v1".into();
-            if s.ai_model.is_empty(){
-                s.ai_model = "gpt-4o-mini".into();
+            "openai" => {
+                s.ai_endpoint = "https://api.openai.com/v1".into();
+                if s.ai_model.is_empty() {
+                    s.ai_model = "gpt-4o-mini".into();
+                }
             }
-        },
-        "gemini" => {
-            s.ai_endpoint = "https://generativelanguage.googleapis.com/v1beta/openai".into();
-            if s.ai_model.is_empty(){
-                s.ai_model = "gemini-2.5-flash".into();
+            "gemini" => {
+                s.ai_endpoint = "https://generativelanguage.googleapis.com/v1beta/openai".into();
+                if s.ai_model.is_empty() {
+                    s.ai_model = "gemini-2.5-flash".into();
+                }
             }
-        },
-        _ => {}
-    }
+            _ => {}
+        }
         Ok(s)
     }
 }

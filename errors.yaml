@@ -28,7 +28,7 @@ errors:
   - code: EVAL-003
     detail_en_US: "Failed to read job ID from form"
   - code: EVAL-004
-    detail_en_US: "Failed to read resume file data"
+    detail_en_US: "Failed to read resume file data [err]"
   - code: EVAL-005
     detail_en_US: "Failed to read unknown form field"
   - code: UI-001

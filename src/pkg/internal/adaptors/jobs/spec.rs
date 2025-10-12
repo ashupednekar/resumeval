@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
-
 #[derive(Serialize, Deserialize, FromRow)]
 pub struct JobEntry {
     pub id: i32,
@@ -13,5 +12,3 @@ pub struct JobEntry {
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
 }
-
-

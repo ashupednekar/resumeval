@@ -1,5 +1,5 @@
-use sqlx::PgConnection;
 use crate::{pkg::internal::adaptors::resumes::spec::ResumeEntry, prelude::Result};
+use sqlx::PgConnection;
 
 pub struct CreateResumeData {
     pub evaluation_id: i32,
@@ -19,12 +19,15 @@ impl<'a> ResumeMutator<'a> {
         ResumeMutator { pool }
     }
 
-    pub async fn bulk_create(&mut self, resumes: Vec<CreateResumeData>) -> Result<Vec<ResumeEntry>> {
+    pub async fn bulk_create(
+        &mut self,
+        resumes: Vec<CreateResumeData>,
+    ) -> Result<Vec<ResumeEntry>> {
         if resumes.is_empty() {
             return Ok(Vec::new());
         }
         let mut query_builder = sqlx::QueryBuilder::new(
-            "INSERT INTO resumes (evaluation_id, filename, original_filename, file_path, file_size, mime_type, status) "
+            "INSERT INTO resumes (evaluation_id, filename, original_filename, file_path, file_size, mime_type, status) ",
         );
         query_builder.push_values(resumes, |mut b, resume| {
             b.push_bind(resume.evaluation_id)
@@ -45,8 +48,13 @@ impl<'a> ResumeMutator<'a> {
         Ok(rows)
     }
 
-
-    pub async fn update_status(&mut self, resume_id: i32, status: &str, score: Option<f64>, feedback: Option<&str>) -> Result<ResumeEntry> {
+    pub async fn update_status(
+        &mut self,
+        resume_id: i32,
+        status: &str,
+        score: Option<f64>,
+        feedback: Option<&str>,
+    ) -> Result<ResumeEntry> {
         let row = sqlx::query_as::<_, ResumeEntry>(
             r#"
             UPDATE resumes 

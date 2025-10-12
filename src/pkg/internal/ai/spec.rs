@@ -9,4 +9,3 @@ pub struct Document {
     #[allow(dead_code)]
     pub embedding: Vector,
 }
-

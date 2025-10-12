@@ -100,13 +100,14 @@ impl User {
 
 impl AuthToken {
     fn generate_code() -> String {
-    //    rand::rng()
-    //        .sample_iter(&Alphanumeric)
-    //        .take(6)
-    //        .map(char::from)
-    //        .collect()
+        //    rand::rng()
+        //        .sample_iter(&Alphanumeric)
+        //        .take(6)
+        //        .map(char::from)
+        //        .collect()
         let mut rng = rand::rng();
-        (0..6).map(|_| rng.random_range(0..10).to_string())
+        (0..6)
+            .map(|_| rng.random_range(0..10).to_string())
             .collect()
     }
 

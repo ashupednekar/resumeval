@@ -7,7 +7,11 @@ use standard_error::{Interpolate, StandardError};
 
 use crate::{
     pkg::{
-        internal::{adaptors::jobs::{mutators::JobMutator, selectors::JobSelector, spec::JobEntry}, ai::{fetch::process, generate::direct_query}, auth::User},
+        internal::{
+            adaptors::jobs::{mutators::JobMutator, selectors::JobSelector, spec::JobEntry},
+            ai::{fetch::process, generate::direct_query},
+            auth::User,
+        },
         server::state::AppState,
     },
     prelude::Result,
@@ -32,7 +36,6 @@ pub struct PatchJobInput {
     pub url: Option<String>,
 }
 
-
 #[derive(Deserialize)]
 pub struct GenerateJobInput {
     pub url: String,
@@ -44,7 +47,9 @@ pub async fn create(
     Json(input): Json<CreateJobInput>,
 ) -> Result<Json<JobEntry>> {
     let mut tx = state.db_pool.begin().await?;
-    let job = JobMutator::new(&mut tx).create(&user.user_id, input).await?;
+    let job = JobMutator::new(&mut tx)
+        .create(&user.user_id, input)
+        .await?;
     //TODO: trigger other stuff (llm indexing)
     tx.commit().await?;
     Ok(Json(job))
@@ -63,7 +68,8 @@ pub async fn generate_from_url(
     Json(input): Json<GenerateJobInput>,
 ) -> Result<Json<Position>> {
     let jd = process(&input.url).await;
-    let prompt = format!(r#"
+    let prompt = format!(
+        r#"
         You are a senior recruiter with immense technical background
         Here's a job description from a typical job board like linkedin\n
         {}\n
@@ -78,7 +84,9 @@ pub async fn generate_from_url(
         Note: the extra curly brace is not your concern, ignore that
         NOTE: thee values here are for you to fill, don't just keep them the same
         DO NOT DEVIATE THE FORMAT or break JSON
-        "#, &jd);
+        "#,
+        &jd
+    );
     let res = direct_query(&state.ai_client, &prompt, None).await?;
     let cleaned_json = res.trim_start_matches("```json").trim_end_matches("```");
     tracing::debug!("AI Result: \n {}", &cleaned_json);
@@ -86,9 +94,7 @@ pub async fn generate_from_url(
     Ok(Json(position))
 }
 
-pub async fn list(
-    State(state): State<AppState>,
-) -> Result<Json<Vec<JobEntry>>> {
+pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<JobEntry>>> {
     let mut tx = state.db_pool.begin().await?;
     let jobs = JobSelector::new(&mut *tx).get_all().await?;
     Ok(Json(jobs))
@@ -100,9 +106,11 @@ pub async fn update(
     Json(input): Json<PatchJobInput>,
 ) -> Result<Json<JobEntry>> {
     let mut tx = state.db_pool.begin().await?;
-    let job = JobMutator::new(&mut tx).update(input.id as i32, input).await?;
+    let job = JobMutator::new(&mut tx)
+        .update(input.id as i32, input)
+        .await?;
     tx.commit().await?;
-    
+
     match job {
         Some(updated_job) => Ok(Json(updated_job)),
         None => Err(StandardError::new("ERR-JOB-001")),

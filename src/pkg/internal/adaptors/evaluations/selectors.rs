@@ -1,6 +1,7 @@
-use sqlx::PgConnection;
+use crate::pkg::internal::adaptors::evaluations::spec::EvaluationEntry;
+use crate::pkg::internal::adaptors::resumes::spec::ResumeEntry;
 use crate::prelude::Result;
-use crate::pkg::internal::adaptors::evaluations::spec::{EvaluationEntry, EvaluationWithJob, ResumeEntry};
+use sqlx::PgConnection;
 
 pub struct EvaluationSelector<'a> {
     pool: &'a mut PgConnection,
@@ -23,7 +24,10 @@ impl<'a> EvaluationSelector<'a> {
         Ok(row)
     }
 
-    pub async fn get_evaluations_for_user(&mut self, user_id: &str) -> Result<Vec<EvaluationEntry>>{
+    pub async fn get_evaluations_for_user(
+        &mut self,
+        user_id: &str,
+    ) -> Result<Vec<EvaluationEntry>> {
         let rows = sqlx::query_as::<_, EvaluationEntry>(
             "select id, name, job_id, created_by, status, total_resumes, processed, accepted, rejected, pending, created_at, updated_at from evaluations
             where created_by = $1 order by created_at desc"
@@ -34,11 +38,14 @@ impl<'a> EvaluationSelector<'a> {
         Ok(rows)
     }
 
-    pub async fn get_resumes_by_evaluation(&mut self, evaluation_id: i32) -> Result<Vec<ResumeEntry>> {
+    pub async fn get_resumes_by_evaluation(
+        &mut self,
+        evaluation_id: i32,
+    ) -> Result<Vec<ResumeEntry>> {
         let rows = sqlx::query_as::<_, ResumeEntry>(
             "SELECT id, evaluation_id, filename, original_filename, file_path, file_size, 
                     mime_type, status, score, feedback, created_at, updated_at 
-             FROM resumes WHERE evaluation_id = $1 ORDER BY created_at DESC"
+             FROM resumes WHERE evaluation_id = $1 ORDER BY created_at DESC",
         )
         .bind(evaluation_id)
         .fetch_all(&mut *self.pool)

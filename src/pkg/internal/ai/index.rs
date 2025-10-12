@@ -5,7 +5,6 @@ use ai::{
 use pgvector::Vector;
 use sqlx::{FromRow, PgConnection, postgres::PgPoolOptions};
 
-
 async fn index_document(
     tx: &mut PgConnection,
     client: &ai::clients::openai::Client,
@@ -33,4 +32,3 @@ async fn index_document(
 
     Ok(())
 }
-

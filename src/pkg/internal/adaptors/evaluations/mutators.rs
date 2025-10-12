@@ -1,6 +1,6 @@
-use sqlx::PgConnection;
+use crate::pkg::internal::adaptors::evaluations::spec::EvaluationEntry;
 use crate::prelude::Result;
-use crate::pkg::internal::adaptors::evaluations::spec::{EvaluationEntry, ResumeEntry};
+use sqlx::PgConnection;
 
 pub struct EvaluationMutator<'a> {
     pool: &'a mut PgConnection,
@@ -11,7 +11,12 @@ impl<'a> EvaluationMutator<'a> {
         EvaluationMutator { pool }
     }
 
-    pub async fn create(&mut self, name: &str, job_id: i32, created_by: &str) -> Result<EvaluationEntry> {
+    pub async fn create(
+        &mut self,
+        name: &str,
+        job_id: i32,
+        created_by: &str,
+    ) -> Result<EvaluationEntry> {
         let row = sqlx::query_as::<_, EvaluationEntry>(
             r#"
             INSERT INTO evaluations (name, job_id, created_by, status, total_resumes, processed, accepted, rejected, pending)
@@ -50,7 +55,11 @@ impl<'a> EvaluationMutator<'a> {
         Ok(row)
     }
 
-    pub async fn update_status(&mut self, evaluation_id: i32, status: &str) -> Result<EvaluationEntry> {
+    pub async fn update_status(
+        &mut self,
+        evaluation_id: i32,
+        status: &str,
+    ) -> Result<EvaluationEntry> {
         let row = sqlx::query_as::<_, EvaluationEntry>(
             r#"
             UPDATE evaluations 
@@ -67,5 +76,3 @@ impl<'a> EvaluationMutator<'a> {
         Ok(row)
     }
 }
-
-

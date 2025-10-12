@@ -71,17 +71,18 @@ pub async fn invite(
     };
     tracing::info!("inviting {} to {}", &user.name, &project.name);
     let mut txn = state.db_pool.begin().await?;
-    let invite = project.invite(&mut *txn, &user.user_id, &me.user_id).await?;
+    let invite = project
+        .invite(&mut *txn, &user.user_id, &me.user_id)
+        .await?;
     invite.details(&state).await?.send(&user.email)?;
     Ok(Json(json!({
         "code": invite.invite_id
     })))
 }
 
-
 #[derive(Deserialize)]
-pub struct AcceptQuery{
-    pub invite_code: String
+pub struct AcceptQuery {
+    pub invite_code: String,
 }
 
 pub async fn accept(
@@ -92,6 +93,10 @@ pub async fn accept(
     let mut txn = state.db_pool.begin().await?;
     let invite = AccessInvite::new(&state, &params.invite_code).await?;
     invite.accept(&mut *txn).await?;
-    tracing::info!("{} accepted invite code - {}", &user.name, &params.invite_code);
+    tracing::info!(
+        "{} accepted invite code - {}",
+        &user.name,
+        &params.invite_code
+    );
     Ok(Redirect::permanent("/"))
 }

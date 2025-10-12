@@ -1,16 +1,15 @@
-use sqlx::PgConnection;
 use crate::pkg::internal::adaptors::jobs::spec::JobEntry;
-use crate::prelude::Result;
 use crate::pkg::server::handlers::jobs::{CreateJobInput, PatchJobInput};
+use crate::prelude::Result;
+use sqlx::PgConnection;
 
-
-pub struct JobMutator<'a>{
-    pool: &'a mut PgConnection
+pub struct JobMutator<'a> {
+    pool: &'a mut PgConnection,
 }
 
-impl<'a> JobMutator<'a>{
+impl<'a> JobMutator<'a> {
     pub fn new(pool: &'a mut PgConnection) -> Self {
-        JobMutator{pool}
+        JobMutator { pool }
     }
 
     pub async fn create(&mut self, create_by: &str, job: CreateJobInput) -> Result<JobEntry> {

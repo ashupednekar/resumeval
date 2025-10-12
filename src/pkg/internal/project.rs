@@ -1,6 +1,9 @@
-use crate::{pkg::{server::state::AppState}, prelude::Result};
+use crate::{pkg::server::state::AppState, prelude::Result};
 use serde::Serialize;
-use sqlx::{prelude::{FromRow, Type}, PgConnection, Postgres, QueryBuilder, Transaction};
+use sqlx::{
+    PgConnection, Postgres, QueryBuilder, Transaction,
+    prelude::{FromRow, Type},
+};
 use standard_error::StandardError;
 use uuid::Uuid;
 
@@ -27,11 +30,16 @@ pub struct AccessInvite {
     pub invite_id: String,
     pub project_id: String,
     pub inviter_id: String,
-    pub status: InviteStatus
+    pub status: InviteStatus,
 }
 
 impl Project {
-    pub async fn create(state: &AppState, name: &str, description: &str, user_id: &str) -> Result<Self> {
+    pub async fn create(
+        state: &AppState,
+        name: &str,
+        description: &str,
+        user_id: &str,
+    ) -> Result<Self> {
         let mut tx = state.db_pool.begin().await?;
         let txn = &mut *tx;
         let project = sqlx::query_as!(
@@ -48,21 +56,21 @@ impl Project {
         )
         .fetch_one(&mut *txn)
         .await?;
-   
+
         let projclone = project.clone();
         let invite_result = async move {
             projclone.invite(txn, &user_id, &user_id).await?;
             Ok::<(), StandardError>(())
         };
-  
+
         let _repo_details = project.clone();
         let repo_result = async move {
             //TODO: create repo if needed
             Ok::<(), StandardError>(())
         };
-    
+
         let (invite_res, repo_res) = tokio::join!(invite_result, repo_result);
-    
+
         match (invite_res, repo_res) {
             (Ok(()), Ok(())) => {
                 tx.commit().await?;
@@ -75,7 +83,7 @@ impl Project {
             }
         }
     }
-    
+
     pub async fn list(state: &AppState, user_id: &str) -> Result<Vec<Self>> {
         let project_ids: Vec<String> = sqlx::query_scalar!(
             "select project_id from project_access where status = $2 and user_id = $1",
@@ -84,10 +92,12 @@ impl Project {
         )
         .fetch_all(&*state.db_pool)
         .await?;
-        if project_ids.is_empty(){
-            return Ok(vec![])
+        if project_ids.is_empty() {
+            return Ok(vec![]);
         }
-        let mut qb = QueryBuilder::new("select project_id, name, description from projects where project_id in (");
+        let mut qb = QueryBuilder::new(
+            "select project_id, name, description from projects where project_id in (",
+        );
         qb.push_bind(&project_ids[0]);
         for pid in &project_ids[1..] {
             qb.push(", ").push_bind(pid);
@@ -127,7 +137,12 @@ impl Project {
         Ok(())
     }
 
-    pub async fn invite(&self, txn: &mut PgConnection, user_id: &str, me: &str) -> Result<AccessInvite> {
+    pub async fn invite(
+        &self,
+        txn: &mut PgConnection,
+        user_id: &str,
+        me: &str,
+    ) -> Result<AccessInvite> {
         let invite = sqlx::query_as!(
             AccessInvite,
             r#"
@@ -144,7 +159,7 @@ impl Project {
         )
         .fetch_one(&mut *txn)
         .await?;
-        if user_id == me{
+        if user_id == me {
             invite.accept(txn).await?;
         }
         Ok(invite)
