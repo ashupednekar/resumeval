@@ -234,7 +234,6 @@
                           </button>
                         </div>
                       </td>
-                      
                       <td class="py-3 px-4">
                         <div class="flex items-center space-x-3">
                           <div class="w-8 h-8 rounded flex items-center justify-center"
@@ -243,10 +242,18 @@
                           </div>
                           <div>
                             <div class="font-medium text-card-foreground" x-text="document.original_filename || document.originalFilename"></div>
-                            <div class="text-sm text-muted-foreground" x-text="document.filename"></div>
+                            <div class="text-sm text-muted-foreground" x-text="document.feedback"></div>
                           </div>
                         </div>
                       </td>
+
+                      <!-- <td class="py-3 px-4"> -->
+                      <!--   <div class="flex items-center space-x-3"> -->
+                      <!--     <div> -->
+                      <!--       <div class="text-sm text-muted-foreground" x-text="document.feedback"></div> -->
+                      <!--     </div> -->
+                      <!--   </div> -->
+                      <!-- </td> -->
                     </tr>
                   </template>
                 </tbody>
@@ -458,7 +465,7 @@
             this.pdfLoading = false;
           }
         },
-        
+      
         closePdfModal() {
           this.showPdfModal = false;
           if (this.pdfUrl) {

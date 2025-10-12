@@ -1,9 +1,11 @@
 use std::path::Path;
+use std::str::FromStr;
 use std::sync::Arc;
 use axum::body::Bytes;
 use axum::response::IntoResponse;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::StatusCode;
+use sqlx::types::BigDecimal;
 use tokio::io::AsyncWriteExt;
 use tokio::{fs, task::JoinSet};
 use uuid::Uuid;
@@ -13,13 +15,16 @@ use axum::{
     extract::{Multipart, Path as AxumPath, State},
     response::Html,
 };
-use serde::Serialize;
+use serde::{Deserialize, Deserializer, Serialize};
 use standard_error::{Interpolate, StandardError, Status};
 
 use crate::conf::settings;
+use crate::pkg::internal::adaptors::evaluations::spec::EvaluationEntry;
+use crate::pkg::internal::adaptors::jobs::selectors::JobSelector;
 use crate::pkg::internal::adaptors::resumes::mutators::{CreateResumeData, ResumeMutator};
 use crate::pkg::internal::adaptors::resumes::selectors::ResumeSelector;
 use crate::pkg::internal::adaptors::resumes::spec::ResumeEntry;
+use crate::pkg::internal::ai::generate::GenerateOps;
 use crate::pkg::internal::ai::index::IndexOps;
 use crate::pkg::internal::ai::read::extract_document;
 use crate::pkg::internal::minio::S3Ops;
@@ -36,18 +41,6 @@ use crate::{
     prelude::Result,
 };
 
-#[derive(Serialize)]
-pub struct EvaluationTask {
-    pub id: i32,
-    pub name: String,
-    pub job_title: String,
-    pub status: String,
-    pub total_resumes: i32,
-    pub processed: i32,
-    pub accepted: i32,
-    pub rejected: i32,
-    pub pending: i32,
-}
 
 #[derive(Serialize)]
 pub struct EvaluationDetails {
@@ -62,11 +55,31 @@ pub struct EvaluationDetails {
     pub pending: i32,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Verdict {
+    pub score: String,
+    pub status: String, //TODO: maybe change to enums for better safety, later
+    #[serde(deserialize_with = "deserialize_clean_string")]
+    pub feedback: String,
+}
+
+fn deserialize_clean_string<'de, D>(deserializer: D) -> core::result::Result<String, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    Ok(s.replace("\r\n", " ")
+        .replace('\n', " ")
+        .replace("  ", " ")
+        .trim()
+        .to_string())
+}
+
 pub async fn create(
     State(state): State<AppState>,
     Extension(user): Extension<Arc<User>>,
     mut multipart: Multipart,
-) -> Result<Json<EvaluationTask>> {
+) -> Result<Json<EvaluationEntry>> {
     let mut name = String::new();
     let mut job_id_str = String::new();
     let mut resume_files = Vec::new();
@@ -179,77 +192,105 @@ pub async fn create(
         resumes.push(resume_data);
     }
     let resumes = ResumeMutator::new(&mut tx).bulk_create(resumes).await?;
+    tx.commit().await?;
     for resume in resumes{
         let db_pool = state.db_pool.clone(); 
         let s3_client = state.s3_client.clone(); 
         let ai_client = state.ai_client.clone();
+        // TODO: indexing
+        // tokio::spawn(async move{
+        //     let mut tx = db_pool.begin().await?;
+        //     let (data, content_type) =  s3_client.retrieve_object(&settings.s3_bucket_name, &resume.file_path).await?;
+        //     let content = extract_document(data, &content_type)?;
+        //     tracing::debug!("pdf content: {}", &content);
+        //     let content = "this is a good resume";
+        //     match ai_client.index_document(&content).await{
+        //         Ok(embedding) => {
+        //             tracing::debug!("embeddings created for {}", &resume.filename);
+        //             ResumeMutator::new(&mut *tx).add_embedding(resume.id, embedding).await?;
+        //             ResumeMutator::new(&mut *tx).update_status(resume.id, "indexed", None, None).await?;
+        //             tx.commit().await?;
+        //             Ok::<(), StandardError>(())
+        //         },
+        //         Err(err) => {
+        //             tracing::error!("error creating embeddings: {}", &err);
+        //             Ok::<(), StandardError>(())
+        //         }
+        //     }
+        // });
         tokio::spawn(async move{
             let mut tx = db_pool.begin().await?;
             let (data, content_type) =  s3_client.retrieve_object(&settings.s3_bucket_name, &resume.file_path).await?;
             let content = extract_document(data, &content_type)?;
-            let content = "this is a good resume";
-            match ai_client.index_document(&content).await{
-                Ok(embedding) => {
-                    tracing::debug!("embeddings created for {}", &resume.filename);
-                    ResumeMutator::new(&mut *tx).add_embedding(resume.id, embedding).await?;
-                    ResumeMutator::new(&mut *tx).update_status(resume.id, "indexed", None, None).await?;
-                    tx.commit().await?;
-                    Ok::<(), StandardError>(())
+            let job = match JobSelector::new(&mut *tx).get_by_id(evaluation.job_id).await?{
+                None => {
+                    tracing::error!("job not found, invalid evaluation state");
+                    return Err(StandardError::new("ERR-RESUME-001"));
                 },
-                Err(err) => {
-                    tracing::error!("error creating embeddings: {}", &err);
-                    Ok::<(), StandardError>(())
-                }
-            }
+                Some(job) => job
+            };
+            let prompt = format!(r#"
+You are a senior recruiter with deep technical expertise. Analyze the provided resume against the job description and return your assessment as valid JSON.
+
+RESUME:
+{}
+
+JOB DESCRIPTION:
+{}
+
+Evaluate the candidate objectively based on:
+- Relevant skills and experience match
+- Technical qualifications
+- Career progression and achievements
+- Overall fit for the role
+
+Return ONLY valid JSON in this exact format (no additional text):
+
+{{
+  "score": "75.5", 
+  "status": "accepted or rejected",
+  "feedback": "Your detailed reasoning here AS A SINGLE CONTIGUOUS PARAGRAPH with only english alphabets, no other characters allowed"
+}}
+
+you will output only valid JSON, never markdown, never text explanations.
+Always ensure the output is syntactically valid JSON.
+All strings must be on a single line; replace internal newlines with \n.
+Do not add comments, trailing commas, or extra whitespace.
+
+CRITICAL REQUIREMENTS:
+- score: number between 0-100 AS A STRING
+- status: either "accepted" or "rejected"  
+- feedback: MUST be a single continuous line of text with NO line breaks, NO newlines, NO special characters
+- Write the entire feedback as one flowing paragraph
+- Return valid JSON only, no markdown code blocks or explanations
+
+                "#, &content, &serde_json::to_string(&job)?);
+            let res = ai_client.direct_query(&prompt, None).await?;
+            let cleaned_json = res.trim_start_matches("```json").trim_end_matches("```");
+            tracing::debug!("AI Result: \n {}", &cleaned_json);
+            let verdict: Verdict = serde_json::from_str(cleaned_json)?;
+            tracing::debug!("Deserialized: \n {}", &cleaned_json);
+            ResumeMutator::new(&mut *tx).add_verdict(
+                resume.id, &verdict.status, Some(&verdict.score), Some(&verdict.feedback)
+            ).await?;
+            EvaluationMutator::new(&mut *tx).update_counts(evaluation.id).await?;
+            tracing::debug!("commiting verdict");
+            tx.commit().await?;
+            Ok::<(), StandardError>(())
         });
-    }
-    // TODO: trigger indexing tasks
-    // TODO: trigger evaluation tasks
-    let mut eval = EvaluationMutator::new(&mut tx);
-    let updated_evaluation = eval 
-        .update_counts(evaluation.id)
-        .await?; // TODO: since indexing is async, maybe remove this
-    eval.update_status(updated_evaluation.id, "indexed").await?;
-    tx.commit().await?;
-    let task = EvaluationTask {
-        id: updated_evaluation.id,
-        name: updated_evaluation.name,
-        job_title: "Selected Job Position".to_string(),
-        status: updated_evaluation.status,
-        total_resumes: updated_evaluation.total_resumes,
-        processed: updated_evaluation.processed,
-        accepted: updated_evaluation.accepted,
-        rejected: updated_evaluation.rejected,
-        pending: updated_evaluation.pending,
-    };
-    Ok(Json(task))
+    } 
+    Ok(Json(evaluation))
 }
 
 pub async fn list(
     State(state): State<AppState>,
     Extension(user): Extension<Arc<User>>,
-) -> Result<Json<Vec<EvaluationTask>>> {
+) -> Result<Json<Vec<EvaluationEntry>>> {
     let mut tx = state.db_pool.begin().await?;
     let evaluations = EvaluationSelector::new(&mut tx)
         .get_evaluations_for_user(&user.user_id)
         .await?;
-
-    let tasks: Vec<EvaluationTask> = evaluations
-        .into_iter()
-        .map(|eval| EvaluationTask {
-            id: eval.id,
-            name: eval.name,
-            job_title: "".into(), //eval.job_title, TODO: join to get job id
-            status: eval.status,
-            total_resumes: eval.total_resumes,
-            processed: eval.processed,
-            accepted: eval.accepted,
-            rejected: eval.rejected,
-            pending: eval.pending,
-        })
-        .collect();
-
-    Ok(Json(tasks))
+    Ok(Json(evaluations))
 }
 
 pub async fn details_page(AxumPath(evaluation_id): AxumPath<i32>) -> Result<Html<String>> {

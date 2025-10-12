@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS evaluations (
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+-- TODO: To reuse resume embeddings, decouple resume from evals
 CREATE TABLE IF NOT EXISTS resumes (
     id SERIAL PRIMARY KEY,
     evaluation_id INTEGER NOT NULL REFERENCES evaluations(id) ON DELETE CASCADE,
@@ -22,7 +23,7 @@ CREATE TABLE IF NOT EXISTS resumes (
     file_size BIGINT NOT NULL,
     mime_type VARCHAR(100) NOT NULL,
     status VARCHAR(50) DEFAULT 'pending',
-    score DECIMAL(5,2),
+    score VARCHAR(5),
     feedback TEXT,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,

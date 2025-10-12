@@ -1,6 +1,6 @@
 use crate::{pkg::internal::adaptors::resumes::spec::ResumeEntry, prelude::Result};
 use pgvector::Vector;
-use sqlx::PgConnection;
+use sqlx::{types::BigDecimal, PgConnection};
 
 pub struct CreateResumeData {
     pub evaluation_id: i32,
@@ -70,11 +70,11 @@ impl<'a> ResumeMutator<'a> {
     }
 
 
-    pub async fn update_status(
+    pub async fn add_verdict(
         &mut self,
         resume_id: i32,
         status: &str,
-        score: Option<f64>,
+        score: Option<&str>,
         feedback: Option<&str>,
     ) -> Result<ResumeEntry> {
         let row = sqlx::query_as::<_, ResumeEntry>(

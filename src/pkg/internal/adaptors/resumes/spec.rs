@@ -12,7 +12,7 @@ pub struct ResumeEntry {
     pub file_size: i64,
     pub mime_type: String,
     pub status: String,
-    pub score: Option<f64>,
+    pub score: Option<String>, 
     pub feedback: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
