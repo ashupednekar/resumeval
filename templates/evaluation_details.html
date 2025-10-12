@@ -203,28 +203,14 @@
               <table class="w-full">
                 <thead>
                   <tr class="border-b border-border">
-                    <th class="text-left py-3 px-4 font-medium text-muted-foreground">Document</th>
                     <th class="text-left py-3 px-4 font-medium text-muted-foreground">Status</th>
-                    <th class="text-left py-3 px-4 font-medium text-muted-foreground">Indexing</th>
-                    <th class="text-left py-3 px-4 font-medium text-muted-foreground">Size</th>
                     <th class="text-left py-3 px-4 font-medium text-muted-foreground">Actions</th>
+                    <th class="text-left py-3 px-4 font-medium text-muted-foreground">Document</th>
                   </tr>
                 </thead>
                 <tbody>
                   <template x-for="document in documents" :key="document.id">
                     <tr class="border-b border-border hover:bg-muted/50">
-                      <td class="py-3 px-4">
-                        <div class="flex items-center space-x-3">
-                          <div class="w-8 h-8 rounded flex items-center justify-center"
-                               :class="getFileIconStyle(document.original_filename || document.originalFilename)">
-                            <i :class="getFileIcon(document.original_filename || document.originalFilename)" class="text-sm"></i>
-                          </div>
-                          <div>
-                            <div class="font-medium text-card-foreground" x-text="document.original_filename || document.originalFilename"></div>
-                            <div class="text-sm text-muted-foreground" x-text="document.filename"></div>
-                          </div>
-                        </div>
-                      </td>
                       <td class="py-3 px-4">
                         <span class="text-xs px-2 py-1 rounded-full border" 
                               :class="document.status === 'accepted' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 
@@ -233,19 +219,8 @@
                                       'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'" 
                               x-text="document.status || 'pending'"></span>
                       </td>
-                      <td class="py-3 px-4">
-                        <div class="flex items-center space-x-2">
-                          <div class="w-2 h-2 rounded-full" 
-                               :class="document.status === 'completed' ? 'bg-green-400' : 
-                                       document.status === 'processing' ? 'bg-blue-400 animate-pulse' : 
-                                       document.status === 'failed' ? 'bg-red-400' :
-                                       'bg-yellow-400'"></div>
-                          <span class="text-sm text-muted-foreground" x-text="document.status || 'pending'"></span>
-                        </div>
-                      </td>
-                      <td class="py-3 px-4">
-                        <span class="text-sm text-muted-foreground" x-text="formatFileSize(document.fileSize)"></span>
-                      </td>
+
+
                       <td class="py-3 px-4">
                         <div class="flex items-center space-x-2">
                           <button x-show="canViewDocument(document.original_filename || document.originalFilename)"
@@ -257,6 +232,19 @@
                                   class="px-2 py-1 text-xs bg-secondary text-secondary-foreground rounded hover:bg-secondary/80 transition-colors">
                             <i class="fas fa-download mr-1"></i>Download
                           </button>
+                        </div>
+                      </td>
+                      
+                      <td class="py-3 px-4">
+                        <div class="flex items-center space-x-3">
+                          <div class="w-8 h-8 rounded flex items-center justify-center"
+                               :class="getFileIconStyle(document.original_filename || document.originalFilename)">
+                            <i :class="getFileIcon(document.original_filename || document.originalFilename)" class="text-sm"></i>
+                          </div>
+                          <div>
+                            <div class="font-medium text-card-foreground" x-text="document.original_filename || document.originalFilename"></div>
+                            <div class="text-sm text-muted-foreground" x-text="document.filename"></div>
+                          </div>
                         </div>
                       </td>
                     </tr>
