@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "update tokens set status = $2 where user_id = $3 and status = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        {
+          "Custom": {
+            "name": "token_status",
+            "kind": {
+              "Enum": [
+                "pending",
+                "verified",
+                "expired",
+                "rejected"
+              ]
+            }
+          }
+        },
+        {
+          "Custom": {
+            "name": "token_status",
+            "kind": {
+              "Enum": [
+                "pending",
+                "verified",
+                "expired",
+                "rejected"
+              ]
+            }
+          }
+        },
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "059aa569dc2cbcf6984351051c5171aa51a960a7b1a13c1d7f7ff88be3a583d3"
+}

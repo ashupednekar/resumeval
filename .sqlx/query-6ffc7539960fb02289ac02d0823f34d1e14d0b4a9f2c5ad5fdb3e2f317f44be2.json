@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO tokens (user_id, code, expiry, status)\n            VALUES ($1, $2, NOW() + interval '1 hour', $3)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar",
+        {
+          "Custom": {
+            "name": "token_status",
+            "kind": {
+              "Enum": [
+                "pending",
+                "verified",
+                "expired",
+                "rejected"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6ffc7539960fb02289ac02d0823f34d1e14d0b4a9f2c5ad5fdb3e2f317f44be2"
+}

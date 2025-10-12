@@ -1,0 +1,57 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select user_id, project_id, invite_id, inviter_id, status as \"status:_\" from project_access\n            where invite_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "project_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "invite_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "inviter_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "status:_",
+        "type_info": {
+          "Custom": {
+            "name": "invite_status",
+            "kind": {
+              "Enum": [
+                "pending",
+                "accepted",
+                "expired"
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "95195a226d95c5b60be22597d659d7b39ecd97a37a456b4f61137e4c79c99d61"
+}
