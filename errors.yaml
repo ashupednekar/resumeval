@@ -29,7 +29,9 @@ errors:
     detail_en_US: "Failed to read job ID from form"
   - code: EVAL-004
     detail_en_US: "Failed to read resume file data [err]"
-  - code: EVAL-005
-    detail_en_US: "Failed to read unknown form field"
+  - code: RESUME-001
+    detail_en_us: "Evaluetion entry not found"
+  - code: RESUME-002
+    detail_en_us: "You do not have access to this evaluation"
   - code: UI-001
     detail_en_US: "Failed to read template file"

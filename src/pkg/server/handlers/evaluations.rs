@@ -1,5 +1,6 @@
 use std::path::Path;
 use std::sync::Arc;
+use reqwest::StatusCode;
 use tokio::io::AsyncWriteExt;
 use tokio::{fs, task::JoinSet};
 use uuid::Uuid;
@@ -10,10 +11,12 @@ use axum::{
     response::Html,
 };
 use serde::Serialize;
-use standard_error::{Interpolate, StandardError};
+use standard_error::{Interpolate, StandardError, Status};
 
 use crate::conf::settings;
 use crate::pkg::internal::adaptors::resumes::mutators::{CreateResumeData, ResumeMutator};
+use crate::pkg::internal::adaptors::resumes::selectors::ResumeSelector;
+use crate::pkg::internal::adaptors::resumes::spec::ResumeEntry;
 use crate::pkg::internal::minio::upload_object;
 use crate::{
     pkg::{
@@ -52,18 +55,6 @@ pub struct EvaluationDetails {
     pub accepted: i32,
     pub rejected: i32,
     pub pending: i32,
-}
-
-#[derive(Serialize)]
-pub struct DocumentInfo {
-    pub id: i32,
-    pub filename: String,
-    pub original_filename: String,
-    pub file_path: String,
-    pub file_size: i64,
-    pub mime_type: String,
-    pub evaluation_status: Option<String>,
-    pub indexing_status: String,
 }
 
 pub async fn create(
@@ -279,72 +270,21 @@ pub async fn get_documents(
     State(state): State<AppState>,
     Extension(user): Extension<Arc<User>>,
     AxumPath(evaluation_id): AxumPath<i32>,
-) -> Result<Json<Vec<DocumentInfo>>> {
+) -> Result<Json<Vec<ResumeEntry>>>{
     let mut tx = state.db_pool.begin().await?;
 
-    // First verify the evaluation belongs to the user
-    let evaluations = EvaluationSelector::new(&mut tx)
-        .get_evaluations_for_user(&user.user_id)
-        .await?;
-    let _evaluation = evaluations
-        .into_iter()
-        .find(|eval| eval.id == evaluation_id)
-        .ok_or_else(|| StandardError::new("EVAL-404: Evaluation not found"))?;
-
-    // Mock document data - replace with actual database query
-    let documents = vec![
-        DocumentInfo {
-            id: 1,
-            filename: "resume_001.pdf".to_string(),
-            original_filename: "john_doe_resume.pdf".to_string(),
-            file_path: "/uploads/resumes/resume_001.pdf".to_string(),
-            file_size: 245760, // ~240KB
-            mime_type: "application/pdf".to_string(),
-            evaluation_status: Some("pending".to_string()),
-            indexing_status: "completed".to_string(),
-        },
-        DocumentInfo {
-            id: 2,
-            filename: "resume_002.pdf".to_string(),
-            original_filename: "jane_smith_cv.pdf".to_string(),
-            file_path: "/uploads/resumes/resume_002.pdf".to_string(),
-            file_size: 312450, // ~305KB
-            mime_type: "application/pdf".to_string(),
-            evaluation_status: Some("accepted".to_string()),
-            indexing_status: "completed".to_string(),
-        },
-        DocumentInfo {
-            id: 3,
-            filename: "resume_003.pdf".to_string(),
-            original_filename: "mike_johnson_resume.pdf".to_string(),
-            file_path: "/uploads/resumes/resume_003.pdf".to_string(),
-            file_size: 189320, // ~185KB
-            mime_type: "application/pdf".to_string(),
-            evaluation_status: Some("rejected".to_string()),
-            indexing_status: "completed".to_string(),
-        },
-        DocumentInfo {
-            id: 4,
-            filename: "resume_004.pdf".to_string(),
-            original_filename: "sarah_wilson_cv.pdf".to_string(),
-            file_path: "/uploads/resumes/resume_004.pdf".to_string(),
-            file_size: 278900, // ~272KB
-            mime_type: "application/pdf".to_string(),
-            evaluation_status: Some("processing".to_string()),
-            indexing_status: "processing".to_string(),
-        },
-        DocumentInfo {
-            id: 5,
-            filename: "resume_005.pdf".to_string(),
-            original_filename: "alex_brown_resume.pdf".to_string(),
-            file_path: "/uploads/resumes/resume_005.pdf".to_string(),
-            file_size: 156780, // ~153KB
-            mime_type: "application/pdf".to_string(),
-            evaluation_status: None,
-            indexing_status: "pending".to_string(),
-        },
-    ];
-
+    let evaluation = match EvaluationSelector::new(&mut *tx)
+        .get_by_id(evaluation_id)
+        .await?{
+            Some(eval) => eval,
+            None => {
+                return Err(StandardError::new("ERR-RESUME-001"))
+            }
+        };
+    if evaluation.created_by != user.user_id{
+        return Err(StandardError::new("ERR-RESUME-002").code(StatusCode::FORBIDDEN))
+    }
+    let documents = ResumeSelector::new(&mut *tx).get_resumes_by_evaluation(evaluation.id).await?;
     Ok(Json(documents))
 }
 
