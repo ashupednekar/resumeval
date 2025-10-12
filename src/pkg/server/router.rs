@@ -34,12 +34,8 @@ pub async fn build_routes() -> Result<Router> {
             get(handlers::evaluations::get_documents),
         )
         .route(
-            "/api/documents/:id/view",
-            get(handlers::evaluations::view_document),
-        )
-        .route(
-            "/api/documents/:id/download",
-            get(handlers::evaluations::download_document),
+            "/api/documents/:id/retrieve",
+            get(handlers::evaluations::retrieve_document),
         )
         .layer(from_fn_with_state(state.clone(), authn::authenticate))
         .route("/signup", post(signup))

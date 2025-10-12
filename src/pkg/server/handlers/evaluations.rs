@@ -1,5 +1,8 @@
 use std::path::Path;
 use std::sync::Arc;
+use axum::body::Bytes;
+use axum::response::IntoResponse;
+use reqwest::header::CONTENT_TYPE;
 use reqwest::StatusCode;
 use tokio::io::AsyncWriteExt;
 use tokio::{fs, task::JoinSet};
@@ -17,7 +20,7 @@ use crate::conf::settings;
 use crate::pkg::internal::adaptors::resumes::mutators::{CreateResumeData, ResumeMutator};
 use crate::pkg::internal::adaptors::resumes::selectors::ResumeSelector;
 use crate::pkg::internal::adaptors::resumes::spec::ResumeEntry;
-use crate::pkg::internal::minio::upload_object;
+use crate::pkg::internal::minio::S3Ops;
 use crate::{
     pkg::{
         internal::{
@@ -129,10 +132,7 @@ pub async fn create(
         .create(&name, job_id, &user.user_id)
         .await?;
 
-    let upload_dir = "uploads/resumes";
-    fs::create_dir_all(upload_dir)
-        .await
-        .map_err(|e| StandardError::new(&format!("EVAL-009: {}", e)))?;
+    let upload_dir = format!("uploads/{}", &evaluation.name);
     let mut resumes: Vec<CreateResumeData> = vec![];
     let mut set = JoinSet::new();
     for (original_filename, data) in resume_files {
@@ -141,36 +141,31 @@ pub async fn create(
             .extension()
             .and_then(|ext| ext.to_str())
             .unwrap_or("bin");
-        let filename = format!("{}.{}", file_id, file_extension);
+        let filename = format!("{}-{}.{}", &original_filename, file_id, file_extension);
         let file_path = format!("{}/{}", upload_dir, filename);
-        
-        let mut file = fs::File::create(&file_path)
-            .await
-            .map_err(|e| StandardError::new(&format!("EVAL-010: {}", e)))?;
-        file.write_all(&data)
-            .await
-            .map_err(|e| StandardError::new(&format!("EVAL-011: {}", e)))?;
-        
         let mime_type = match file_extension {
             "pdf" => "application/pdf",
             "doc" => "application/msword",
             "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             _ => "application/octet-stream",
         };
-        
         let s3_client = state.s3_client.clone();
-        let bucket_name = settings.s3_bucket_name.clone();
-        let file_path_clone = file_path.clone();
-        let data_len = data.len();
+        let key = file_path.clone();
+        let file_data: Vec<u8> = data.into();
+        let data_len = file_data.len();
         let evaluation_id = evaluation.id;
-        
         set.spawn(async move {
-            upload_object(&s3_client, &bucket_name, &file_path_clone).await?;
+            s3_client.upload_object(
+                &settings.s3_bucket_name,
+                &key,
+                file_data,
+                mime_type 
+            ).await?;
             Ok::<CreateResumeData, StandardError>(CreateResumeData {
                 evaluation_id,
                 filename,
                 original_filename,
-                file_path: file_path_clone,
+                file_path: key,
                 file_size: data_len as i64,
                 mime_type: mime_type.into(),
             })
@@ -288,48 +283,23 @@ pub async fn get_documents(
     Ok(Json(documents))
 }
 
-pub async fn view_document(AxumPath(document_id): AxumPath<i32>) -> Result<Html<String>> {
-    // Mock response - replace with actual document serving logic
-    let content = format!(
-        r#"
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Document Viewer</title>
-        </head>
-        <body>
-            <h1>Document Viewer</h1>
-            <p>Viewing document ID: {}</p>
-            <p>This is a placeholder for document viewing functionality.</p>
-            <p>In a real implementation, this would serve the actual PDF or document content.</p>
-        </body>
-        </html>
-        "#,
-        document_id
-    );
-
-    Ok(Html(content))
+pub async fn retrieve_document(
+    State(state): State<AppState>,
+    AxumPath(document_id): AxumPath<i32>
+) -> Result<impl IntoResponse>{
+    let mut tx = state.db_pool.begin().await?;
+    let resume = ResumeSelector::new(&mut tx).get_resume_by_id(document_id).await?;
+    
+    let (file_data, content_type) = state.s3_client
+        .retrieve_object(&settings.s3_bucket_name, &resume.file_path)
+        .await?;
+    tracing::debug!("retrieved {} of type: {}, size: {} bytes", 
+        &resume.file_path, &content_type, file_data.len());
+    Ok((
+        [(CONTENT_TYPE, content_type.to_string())],
+        file_data
+    ))
 }
 
-pub async fn download_document(AxumPath(document_id): AxumPath<i32>) -> Result<Html<String>> {
-    // Mock response - replace with actual file download logic
-    let content = format!(
-        r#"
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Download Document</title>
-        </head>
-        <body>
-            <h1>Download Document</h1>
-            <p>Download for document ID: {}</p>
-            <p>This is a placeholder for document download functionality.</p>
-            <p>In a real implementation, this would serve the actual file for download.</p>
-        </body>
-        </html>
-        "#,
-        document_id
-    );
 
-    Ok(Html(content))
-}
+

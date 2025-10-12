@@ -1,4 +1,4 @@
-use crate::{conf::settings, pkg::internal::minio::create_bucket, prelude::Result};
+use crate::{conf::settings, pkg::internal::minio::S3Ops, prelude::Result};
 use ai::clients::openai::Client as AIClient;
 use aws_sdk_s3::{
     Client as S3Client,
@@ -52,12 +52,12 @@ impl AppState {
             .region(Region::new(settings.s3_region.clone()))
             .force_path_style(true)
             .build();
-        let s3_client = aws_sdk_s3::Client::from_conf(s3_config);
-        create_bucket(&s3_client, &settings.s3_bucket_name).await?;
+        let s3_client = Arc::new(aws_sdk_s3::Client::from_conf(s3_config));
+        s3_client.create_new_bucket(&settings.s3_bucket_name).await?;
         Ok(AppState {
             db_pool: Arc::new(db_pool()?),
             ai_client: Arc::new(ai),
-            s3_client: Arc::new(s3_client),
+            s3_client
         })
     }
 }
