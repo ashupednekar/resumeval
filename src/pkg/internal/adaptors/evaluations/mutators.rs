@@ -62,17 +62,37 @@ impl<'a> EvaluationMutator<'a> {
     ) -> Result<EvaluationEntry> {
         let row = sqlx::query_as::<_, EvaluationEntry>(
             r#"
-            UPDATE evaluations 
-            SET status = $2, updated_at = CURRENT_TIMESTAMP
-            WHERE id = $1
-            RETURNING id, name, job_id, created_by, status, total_resumes, processed, accepted, rejected, pending, created_at, updated_at
+            update evaluations 
+            set status = $2, updated_at = current_timestamp
+            where id = $1
+            returning id, name, job_id, created_by, status, total_resumes, processed, accepted, rejected, pending, created_at, updated_at
             "#
         )
         .bind(evaluation_id)
         .bind(status)
         .fetch_one(&mut *self.pool)
         .await?;
-
         Ok(row)
     }
+
+    pub async fn set_pending(
+        &mut self,
+        evaluation_id: i32,
+        pending: i32
+    ) -> Result<EvaluationEntry> {
+        let row = sqlx::query_as::<_, EvaluationEntry>(
+            r#"
+            update evaluations 
+            set pending = $2, updated_at = current_timestamp
+            where id = $1
+            returning id, name, job_id, created_by, status, total_resumes, processed, accepted, rejected, pending, created_at, updated_at
+            "#
+        )
+        .bind(evaluation_id)
+        .bind(pending)
+        .fetch_one(&mut *self.pool)
+        .await?;
+        Ok(row)
+    }
+
 }

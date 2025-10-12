@@ -192,6 +192,7 @@ pub async fn create(
         resumes.push(resume_data);
     }
     let resumes = ResumeMutator::new(&mut tx).bulk_create(resumes).await?;
+    EvaluationMutator::new(&mut tx).set_pending(evaluation.id, resumes.len() as i32).await?;
     tx.commit().await?;
     for resume in resumes{
         let db_pool = state.db_pool.clone(); 
