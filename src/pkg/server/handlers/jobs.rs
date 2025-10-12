@@ -9,7 +9,7 @@ use crate::{
     pkg::{
         internal::{
             adaptors::jobs::{mutators::JobMutator, selectors::JobSelector, spec::JobEntry},
-            ai::{fetch::process, generate::GenerateOps},
+            ai::{fetch::process, generate::GenerateOps, index::IndexOps},
             auth::User,
         },
         server::state::AppState,
@@ -50,10 +50,15 @@ pub async fn create(
     let job = JobMutator::new(&mut tx)
         .create(&user.user_id, input)
         .await?;
-    //TODO: pubsub maybe...
-    tokio::spawn(async move{
-    });
     tx.commit().await?;
+    //TODO: pubsub maybe...
+    let jd = serde_json::to_string(&job)?;
+    tokio::spawn(async move{
+        let mut tx = state.db_pool.begin().await?;
+        let embedding = state.ai_client.index_document(&jd).await?;
+        JobMutator::new(&mut *tx).add_embedding(job.id, embedding).await?;
+        Ok::<(), StandardError>(())
+    });
     Ok(Json(job))
 }
 

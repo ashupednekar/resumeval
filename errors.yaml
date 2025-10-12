@@ -17,6 +17,8 @@ errors:
     detail_en_US: "Error initializing embeddings [err]"
   - code: ERR-AI-004
     detail_en_US: "Error creating embeddings [err]"
+  - code: ERR-AI-005
+    detail_en_US: "Error reading document [err]"
   - code: ERR-S3-001
     detail_en_US: "Error creating bucket [err]"
   - code: ERR-S3-002

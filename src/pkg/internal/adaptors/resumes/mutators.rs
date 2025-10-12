@@ -57,16 +57,15 @@ impl<'a> ResumeMutator<'a> {
         let row = sqlx::query_as::<_, ResumeEntry>(
             r#"
             UPDATE resumes 
-            SET embedding = $2, updated_at = CURRENT_TIMESTAMP
+            SET embedding = $2, status='indexed', updated_at = CURRENT_TIMESTAMP
             WHERE id = $1
             RETURNING id, evaluation_id, filename, original_filename, file_path, file_size, mime_type, status, score, feedback, created_at, updated_at
             "#
         )
         .bind(resume_id)
-        .bind(embedding)
+        .bind(&embedding)
         .fetch_one(&mut *self.pool)
         .await?;
-
         Ok(row)
     }
 

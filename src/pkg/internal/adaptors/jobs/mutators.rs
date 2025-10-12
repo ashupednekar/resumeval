@@ -1,6 +1,7 @@
 use crate::pkg::internal::adaptors::jobs::spec::JobEntry;
 use crate::pkg::server::handlers::jobs::{CreateJobInput, PatchJobInput};
 use crate::prelude::Result;
+use pgvector::Vector;
 use sqlx::PgConnection;
 
 pub struct JobMutator<'a> {
@@ -30,6 +31,26 @@ impl<'a> JobMutator<'a> {
         .bind(&job.description)
         .bind(&job.requirements)
         .bind(&job.url)
+        .fetch_one(&mut *self.pool)
+        .await?;
+        Ok(row)
+    }
+
+    pub async fn add_embedding(
+        &mut self,
+        job_id: i32,
+        embedding: Vector
+    ) -> Result<JobEntry> {
+        let row = sqlx::query_as::<_, JobEntry>(
+            r#"
+            UPDATE jobs 
+            SET embedding = $2, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $1
+            RETURNING id, created_by, title, department, description, requirements, url, created_at, updated_at
+            "#
+        )
+        .bind(job_id)
+        .bind(&embedding)
         .fetch_one(&mut *self.pool)
         .await?;
         Ok(row)

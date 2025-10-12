@@ -20,6 +20,8 @@ use crate::conf::settings;
 use crate::pkg::internal::adaptors::resumes::mutators::{CreateResumeData, ResumeMutator};
 use crate::pkg::internal::adaptors::resumes::selectors::ResumeSelector;
 use crate::pkg::internal::adaptors::resumes::spec::ResumeEntry;
+use crate::pkg::internal::ai::index::IndexOps;
+use crate::pkg::internal::ai::read::extract_document;
 use crate::pkg::internal::minio::S3Ops;
 use crate::{
     pkg::{
@@ -171,18 +173,41 @@ pub async fn create(
             })
         });
     }
-
     while let Some(result) = set.join_next().await {
         let resume_data = result
             .map_err(|e| StandardError::new(&format!("EVAL-012: {}", e)))??;
         resumes.push(resume_data);
     }
-    ResumeMutator::new(&mut tx).bulk_create(resumes).await?;
+    let resumes = ResumeMutator::new(&mut tx).bulk_create(resumes).await?;
+    for resume in resumes{
+        let db_pool = state.db_pool.clone(); 
+        let s3_client = state.s3_client.clone(); 
+        let ai_client = state.ai_client.clone();
+        tokio::spawn(async move{
+            let mut tx = db_pool.begin().await?;
+            let (data, content_type) =  s3_client.retrieve_object(&settings.s3_bucket_name, &resume.file_path).await?;
+            let content = extract_document(data, &content_type)?;
+            let content = "this is a good resume";
+            match ai_client.index_document(&content).await{
+                Ok(embedding) => {
+                    tracing::debug!("embeddings created for {}", &resume.filename);
+                    ResumeMutator::new(&mut *tx).add_embedding(resume.id, embedding).await?;
+                    EvaluationMutator::new(&mut *tx).update_status(evaluation.id, "indexed").await?;
+                    tx.commit().await?;
+                    Ok::<(), StandardError>(())
+                },
+                Err(err) => {
+                    tracing::error!("error creating embeddings: {}", &err);
+                    Ok::<(), StandardError>(())
+                }
+            }
+        });
+    }
     // TODO: trigger indexing tasks
     // TODO: trigger evaluation tasks
     let updated_evaluation = EvaluationMutator::new(&mut tx)
         .update_counts(evaluation.id)
-        .await?;
+        .await?; // TODO: since indexing is async, maybe remove this
     tx.commit().await?;
     let task = EvaluationTask {
         id: updated_evaluation.id,

@@ -5,7 +5,7 @@ use ai::{
 };
 use pgvector::Vector;
 use standard_error::{Interpolate, StandardError};
-use crate::prelude::Result;
+use crate::{conf::settings, prelude::Result};
 
 
 #[async_trait::async_trait]
@@ -23,8 +23,14 @@ impl IndexOps for Arc<Client>{
         &self,
         content: &str,
     ) -> Result<Vector> {
+        let model = match settings.ai_provider.as_str(){
+            "ollama" => "nomic-embed-text",
+            "gemini" => "text-embedding-004",
+            "openai" => "text-embedding-3-large",
+            _ => {return Err(StandardError::new("ERR-AI-004").interpolate_err("invalid model".into()))}
+        };
         let request = EmbeddingsRequestBuilder::default()
-            .model("nomic-embed-text")
+            .model(model)
             .input(vec![content.to_string()])
             .build()
             .map_err(|e|StandardError::new("ERR-AI-004").interpolate_err(e.to_string()))
