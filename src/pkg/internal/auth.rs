@@ -89,11 +89,11 @@ impl User {
         .execute(pool)
         .await?;
         tracing::debug!("{}", &code);
-        // AuthnCodeTemplate {
-        //     name: &self.name,
-        //     code: &code,
-        // }
-        // .send(&self.email)?;
+        AuthnCodeTemplate {
+            name: &self.name,
+            code: &code,
+        }
+        .send(&self.email)?;
         Ok(())
     }
 }
