@@ -4,7 +4,7 @@ use sqlx::PgPool;
 use std::sync::Arc;
 use standard_error::{Interpolate, StandardError};
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
-use crate::{conf::settings, prelude::Result};
+use crate::{conf::settings, pkg::internal::minio::create_bucket, prelude::Result};
 
 pub fn db_pool() -> Result<Pool<Postgres>> {
     let pool = PgPoolOptions::new()
@@ -44,10 +44,11 @@ impl AppState {
                 &settings.s3_access_key, &settings.s3_secret_key, None, None, "")
             )
             .endpoint_url(&settings.s3_endpoint)
+            .region(Region::new(settings.s3_region.clone()))
             .force_path_style(true)
             .build();
         let s3_client = aws_sdk_s3::Client::from_conf(s3_config);
-        //create_bucket(&s3_client, &settings.s3_bucket_name).await?;
+        create_bucket(&s3_client, &settings.s3_bucket_name).await?;
         Ok(AppState {
             db_pool: Arc::new(db_pool()?),
             ai_client: Arc::new(ai),

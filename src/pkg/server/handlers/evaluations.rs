@@ -1,20 +1,21 @@
 use std::sync::Arc;
 use std::path::Path;
 use uuid::Uuid;
-use tokio::fs;
+use tokio::{fs, task::JoinSet};
 use tokio::io::AsyncWriteExt;
 
 use axum::{Extension, extract::{Multipart, State, Path as AxumPath}, Json, response::Html};
 use serde::Serialize;
 use standard_error::StandardError;
 
+use crate::pkg::internal::adaptors::resumes::mutators::{CreateResumeData, ResumeMutator};
 use crate::{
     pkg::{
         internal::{
             auth::User,
             adaptors::evaluations::{
                 selectors::EvaluationSelector,
-                mutators::{EvaluationMutator, ResumeMutator},
+                mutators::EvaluationMutator,
                 spec::EvaluationWithJob,
             },
         },
@@ -69,7 +70,6 @@ pub async fn create(
     let mut name = String::new();
     let mut job_id_str = String::new();
     let mut resume_files = Vec::new();
-
     while let Some(field) = multipart.next_field().await.map_err(|e| StandardError::new(&format!("EVAL-001: {}", e)))? {
         let field_name = field.name().unwrap_or("");
         match field_name {
@@ -87,15 +87,12 @@ pub async fn create(
                     .and_then(|ext| ext.to_str())
                     .unwrap_or("")
                     .to_lowercase();
-                
                 if !["pdf", "doc", "docx"].contains(&file_extension.as_str()) {
                     return Err(StandardError::new("EVAL-006: Invalid file type. Only PDF, DOC, DOCX files are allowed").into());
                 }
-                
                 if data.len() > 10 * 1024 * 1024 { // 10MB limit
                     return Err(StandardError::new("EVAL-007: File too large. Maximum size is 10MB").into());
                 }
-                
                 resume_files.push((file_name, data));
             }
             _ => {
@@ -112,7 +109,7 @@ pub async fn create(
     
     let upload_dir = "uploads/resumes";
     fs::create_dir_all(upload_dir).await.map_err(|e| StandardError::new(&format!("EVAL-009: {}", e)))?;
-    
+    let mut resumes: Vec<CreateResumeData> = vec![];
     for (original_filename, data) in resume_files {
         let file_id = Uuid::new_v4();
         let file_extension = Path::new(&original_filename)
@@ -131,21 +128,13 @@ pub async fn create(
             "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             _ => "application/octet-stream",
         };
-        
-        ResumeMutator::new(&mut tx).create(
-            evaluation.id,
-            &filename,
-            &original_filename,
-            &file_path,
-            data.len() as i64,
-            mime_type,
-        ).await?;
+        resumes.push(CreateResumeData { 
+            evaluation_id: evaluation.id, filename, original_filename, file_path, file_size: data.len() as i64, mime_type: mime_type.into()
+        });
     }
-    
+    ResumeMutator::new(&mut tx).bulk_create(resumes).await?;
     let updated_evaluation = EvaluationMutator::new(&mut tx).update_counts(evaluation.id).await?;
-    
     tx.commit().await?;
-
     let task = EvaluationTask {
         id: updated_evaluation.id,
         name: updated_evaluation.name,
@@ -157,7 +146,6 @@ pub async fn create(
         rejected: updated_evaluation.rejected,
         pending: updated_evaluation.pending,
     };
-
     Ok(Json(task))
 }
 

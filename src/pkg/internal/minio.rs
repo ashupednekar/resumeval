@@ -1,7 +1,7 @@
 use aws_sdk_s3::{config::Region, Client};
-use standard_error::StandardError;
+use standard_error::{Interpolate, StandardError};
 
-use crate::{conf::settings, prelude::Result};
+use crate::prelude::Result;
 
 #[derive(Debug)]
 struct DefaultResolver {
@@ -20,13 +20,8 @@ pub async fn create_bucket(
     client: &aws_sdk_s3::Client,
     bucket_name: &str,
 ) -> Result<Option<aws_sdk_s3::operation::create_bucket::CreateBucketOutput>> {
-    let constraint = aws_sdk_s3::types::BucketLocationConstraint::from(settings.s3_region.to_string().as_str());
-    let cfg = aws_sdk_s3::types::CreateBucketConfiguration::builder()
-        .location_constraint(constraint)
-        .build();
     let create = client
         .create_bucket()
-        .create_bucket_configuration(cfg)
         .bucket(bucket_name)
         .send()
         .await;
@@ -38,9 +33,26 @@ pub async fn create_bucket(
         {
             Ok(None)
         } else {
-            Err(StandardError::new("ERR-S3-001"))
+            Err(StandardError::new("ERR-S3-001").interpolate_err(err.to_string()))
         }
     })
+}
+
+pub async fn upload_object(
+    client: &aws_sdk_s3::Client,
+    bucket_name: &str,
+    file_name: &str,
+    key: &str,
+) -> Result<aws_sdk_s3::operation::put_object::PutObjectOutput> {
+    let body = aws_sdk_s3::primitives::ByteStream::from_path(std::path::Path::new(file_name)).await;
+    client
+        .put_object()
+        .bucket(bucket_name)
+        .key(key)
+        .body(body.unwrap())
+        .send()
+        .await
+        .map_err(|e| StandardError::new("ERR-S3-002").interpolate_err(e.to_string()))
 }
 
 
