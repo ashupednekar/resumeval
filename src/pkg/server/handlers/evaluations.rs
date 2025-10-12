@@ -192,7 +192,7 @@ pub async fn create(
                 Ok(embedding) => {
                     tracing::debug!("embeddings created for {}", &resume.filename);
                     ResumeMutator::new(&mut *tx).add_embedding(resume.id, embedding).await?;
-                    EvaluationMutator::new(&mut *tx).update_status(evaluation.id, "indexed").await?;
+                    ResumeMutator::new(&mut *tx).update_status(resume.id, "indexed", None, None).await?;
                     tx.commit().await?;
                     Ok::<(), StandardError>(())
                 },
@@ -205,9 +205,11 @@ pub async fn create(
     }
     // TODO: trigger indexing tasks
     // TODO: trigger evaluation tasks
-    let updated_evaluation = EvaluationMutator::new(&mut tx)
+    let mut eval = EvaluationMutator::new(&mut tx);
+    let updated_evaluation = eval 
         .update_counts(evaluation.id)
         .await?; // TODO: since indexing is async, maybe remove this
+    eval.update_status(updated_evaluation.id, "indexed").await?;
     tx.commit().await?;
     let task = EvaluationTask {
         id: updated_evaluation.id,
