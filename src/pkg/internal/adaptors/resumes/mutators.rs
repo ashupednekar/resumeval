@@ -1,4 +1,5 @@
 use crate::{pkg::internal::adaptors::resumes::spec::ResumeEntry, prelude::Result};
+use pgvector::Vector;
 use sqlx::PgConnection;
 
 pub struct CreateResumeData {
@@ -47,6 +48,28 @@ impl<'a> ResumeMutator<'a> {
             .await?;
         Ok(rows)
     }
+
+    pub async fn add_embedding(
+        &mut self,
+        resume_id: i32,
+        embeddings: Vector
+    ) -> Result<ResumeEntry> {
+        let row = sqlx::query_as::<_, ResumeEntry>(
+            r#"
+            UPDATE resumes 
+            SET embedding = $2, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $1
+            RETURNING id, evaluation_id, filename, original_filename, file_path, file_size, mime_type, status, score, feedback, created_at, updated_at
+            "#
+        )
+        .bind(resume_id)
+        .bind(embedding)
+        .fetch_one(&mut *self.pool)
+        .await?;
+
+        Ok(row)
+    }
+
 
     pub async fn update_status(
         &mut self,

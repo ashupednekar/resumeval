@@ -153,7 +153,7 @@ pub async fn create(
         let key = file_path.clone();
         let file_data: Vec<u8> = data.into();
         let data_len = file_data.len();
-        let evaluation_id = evaluation.id;
+        let evaluation_id = evaluation.id; 
         set.spawn(async move {
             s3_client.upload_object(
                 &settings.s3_bucket_name,
@@ -178,6 +178,8 @@ pub async fn create(
         resumes.push(resume_data);
     }
     ResumeMutator::new(&mut tx).bulk_create(resumes).await?;
+    // TODO: trigger indexing tasks
+    // TODO: trigger evaluation tasks
     let updated_evaluation = EvaluationMutator::new(&mut tx)
         .update_counts(evaluation.id)
         .await?;

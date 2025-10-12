@@ -3,32 +3,24 @@ use ai::{
     embeddings::{Embeddings, EmbeddingsRequestBuilder},
 };
 use pgvector::Vector;
-use sqlx::{FromRow, PgConnection, postgres::PgPoolOptions};
+use standard_error::{Interpolate, StandardError};
+use crate::prelude::Result;
 
-async fn index_document(
-    tx: &mut PgConnection,
+pub async fn index_document(
     client: &ai::clients::openai::Client,
     content: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<Vector> {
     let request = EmbeddingsRequestBuilder::default()
         .model("nomic-embed-text")
         .input(vec![content.to_string()])
-        .build()?;
-
-    let response = client.create_embeddings(&request).await?;
-
+        .build()
+        .map_err(|e|StandardError::new("ERR-AI-004").interpolate_err(e.to_string()))
+        ?;
+    let response = client.create_embeddings(&request).await.map_err(|e|StandardError::new("ERR-AI-004").interpolate_err(e.to_string()))?;
     let embedding_vec: Vec<f32> = response.data[0]
         .embedding
         .iter()
         .map(|&x| x as f32)
         .collect();
-    let embedding = Vector::from(embedding_vec);
-
-    sqlx::query("INSERT INTO documents (content, embedding) VALUES ($1, $2)")
-        .bind(content)
-        .bind(&embedding)
-        .execute(tx)
-        .await?;
-
-    Ok(())
+    Ok(Vector::from(embedding_vec))
 }
