@@ -52,7 +52,7 @@ spec:
         - name: BASE_URL
           value: "http://localhost:3000"
         - name: AI_PROVIDER
-          value: "gemini"
+          value: "{{.Values.ai.provider}}"
         - name: AI_ENDPOINT
           value: ""
         - name: AI_MODEL
@@ -63,11 +63,11 @@ spec:
               name: resumeval-secrets
               key: ai-key
         - name: S3_ENDPOINT
-          value: "http://minio.essentials.svc:9000"
+          value: "{{.Values.s3.endplint}}"
         - name: S3_ACCESS_KEY
-          value: "minioadmin"
+          value: "{{.Values.s3.access_key}}"
         - name: S3_SECRET_KEY
-          value: "minioadmin"
+          value: "{{.Values.s3.secret_key}}" # TODO: take from secret
         - name: S3_BUCKET_NAME
           value: "files"
         - name: S3_REGION
@@ -120,15 +120,15 @@ metadata:
   name: resumeval
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
-    cert-manager.io/cluster-issuer: "letsencrypt"
+    cert-manager.io/cluster-issuer: "{{.Values.ingress.clusterissuer}}"
 spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - resumeval.ashudev.in
+    - "{{.Values.ingress.domain}}"
     secretName: resumeval-tls
   rules:
-  - host: resumeval.ashudev.in
+  - host: "{{.Values.ingress.domain}}"
     http:
       paths:
       - path: /
