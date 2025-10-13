@@ -18,4 +18,4 @@ COPY . .
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=$SCCACHE_DIR,sharing=locked \
     cargo build --release
-CMD ["/app/target/release/resumeval"]
+CMD ["/app/target/release/resumeval", "listen"]
