@@ -33,7 +33,9 @@ pub trait GetTxn{
 impl GetTxn for Arc<PgPool>{
     async fn begin_txn(&self) -> Result<Transaction<'static, Postgres>>{
         let mut tx = self.begin().await?;
-        sqlx::query(&format!("set search_path to {}", &settings.database_schema)).execute(&mut *tx).await?;
+        let set_schema = format!("set search_path to {}", &settings.database_schema);
+        tracing::info!("{}", &set_schema);
+        sqlx::query(&set_schema).execute(&mut *tx).await?;
         Ok(tx)
     }
 }
