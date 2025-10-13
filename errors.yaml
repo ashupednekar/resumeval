@@ -7,6 +7,8 @@ errors:
     detail_en_US: "Invalid code"
   - code: ERR-PROJ-001
     detail_en_US: "Invalid code"
+  - code: ERR-DB-000
+    detail_en_US: "Error migrating database"
   - code: ERR-AI-000
     detail_en_US: "Error initializing ai client"
   - code: ERR-AI-001
