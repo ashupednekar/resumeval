@@ -1,7 +1,7 @@
 use crate::{
     pkg::{
-        internal::email::{SendEmail, authtoken::AuthnCodeTemplate},
-        server::state::AppState,
+        internal::email::{authtoken::AuthnCodeTemplate, SendEmail},
+        server::state::{AppState, GetTxn},
     },
     prelude::Result,
 };
@@ -42,6 +42,7 @@ pub struct User {
 
 impl User {
     pub async fn create(state: &AppState, email: &str, name: &str) -> Result<Self> {
+        let mut tx = state.db_pool.begin_txn().await?;
         let user = sqlx::query_as!(
             User,
             r#"
@@ -55,12 +56,13 @@ impl User {
             name,
             Uuid::new_v4().to_string()
         )
-        .fetch_one(&*state.db_pool)
+        .fetch_one(&mut *tx)
         .await?;
         Ok(user)
     }
 
     pub async fn retrieve(state: &AppState, email: &str) -> Result<Option<Self>> {
+        let mut tx = state.db_pool.begin_txn().await?;
         Ok(sqlx::query_as!(
             User,
             r#"
@@ -69,12 +71,12 @@ impl User {
             "#,
             &email
         )
-        .fetch_optional(&*state.db_pool)
+        .fetch_optional(&mut *tx)
         .await?)
     }
 
     pub async fn issue_token(&self, state: &AppState) -> Result<()> {
-        let pool = &*state.db_pool;
+        let mut tx = state.db_pool.begin_txn().await?;
         let code = AuthToken::generate_code();
         tracing::debug!("issued code: {}", &code);
         sqlx::query!(
@@ -86,7 +88,7 @@ impl User {
             code,
             TokenStatus::Pending as _
         )
-        .execute(pool)
+        .execute(&mut *tx)
         .await?;
         tracing::debug!("{}", &code);
         AuthnCodeTemplate {
@@ -127,7 +129,7 @@ impl AuthToken {
     }
 
     pub async fn check_token_validity(state: &AppState, token_str: &str) -> Result<User> {
-        let pool = &*state.db_pool;
+        let mut tx = state.db_pool.begin_txn().await?;
         let token_str = token_str
             .parse::<Uuid>()
             .map_err(|_| StandardError::new("ERR-AUTH-002"))?;
@@ -145,7 +147,7 @@ impl AuthToken {
             &token_str,
             &TokenStatus::Verified as _
         )
-        .fetch_optional(pool)
+        .fetch_optional(&mut *tx)
         .await;
         if let Ok(Some(token)) = result {
             let user = sqlx::query_as!(

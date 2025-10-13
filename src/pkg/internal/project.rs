@@ -85,12 +85,13 @@ impl Project {
     }
 
     pub async fn list(state: &AppState, user_id: &str) -> Result<Vec<Self>> {
+        let mut tx = state.db_pool.begin_txn().await?;
         let project_ids: Vec<String> = sqlx::query_scalar!(
             "select project_id from project_access where status = $2 and user_id = $1",
             &user_id,
             InviteStatus::Accepted as _
         )
-        .fetch_all(&*state.db_pool)
+        .fetch_all(&mut *tx)
         .await?;
         if project_ids.is_empty() {
             return Ok(vec![]);
@@ -105,34 +106,36 @@ impl Project {
         qb.push(")");
         let projects = qb
             .build_query_as::<Project>()
-            .fetch_all(&*state.db_pool)
+            .fetch_all(&mut *tx)
             .await?;
         Ok(projects)
     }
 
     pub async fn retrieve(state: &AppState, project_id: &str) -> Result<Self> {
+        let mut tx = state.db_pool.begin_txn().await?;
         let project = sqlx::query_as!(
             Project,
             "select project_id, name, description from projects where project_id = $1",
             &project_id
         )
-        .fetch_one(&*state.db_pool)
+        .fetch_one(&mut *tx)
         .await?;
         Ok(project)
     }
 
     pub async fn delete(&self, state: &AppState) -> Result<()> {
+        let mut tx = state.db_pool.begin_txn().await?;
         sqlx::query!(
             "delete from project_access where project_id = $1",
             &self.project_id
         )
-        .execute(&*state.db_pool)
+        .execute(&mut *tx)
         .await?;
         sqlx::query!(
             "delete from projects where project_id = $1",
             &self.project_id
         )
-        .execute(&*state.db_pool)
+        .execute(&mut *tx)
         .await?;
         Ok(())
     }
@@ -168,13 +171,14 @@ impl Project {
 
 impl AccessInvite {
     pub async fn new(state: &AppState, invite_id: &str) -> Result<Self> {
+        let mut tx = state.db_pool.begin_txn().await?;
         Ok(sqlx::query_as!(
             Self,
             r#"select user_id, project_id, invite_id, inviter_id, status as "status:_" from project_access
             where invite_id = $1"#,
             &invite_id
         )
-        .fetch_one(&*state.db_pool)
+        .fetch_one(&mut *tx)
         .await?)
     }
 
