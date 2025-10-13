@@ -65,7 +65,7 @@ spec:
               name: resumeval-secrets
               key: ai-key
         - name: S3_ENDPOINT
-          value: "{{.Values.s3.endplint}}"
+          value: "{{.Values.s3.endpoint}}"
         - name: S3_ACCESS_KEY
           value: "{{.Values.s3.access_key}}"
         - name: S3_SECRET_KEY
