@@ -1,20 +1,19 @@
-FROM rust:1.85-slim as builder
+FROM rust:1.86.0-bullseye AS build-env
 
 WORKDIR /app
 
-RUN apt-get update && \
-    apt-get install -y musl-tools && \
-    rustup target add aarch64-unknown-linux-musl
+ARG GIT_TOKEN
 
-COPY Cargo.toml Cargo.lock ./
-COPY src ./src
+RUN git config --global credential.helper store
+RUN echo "https://ci:${GIT_TOKEN}@github.com" > ~/.git-credentials
 
-RUN cargo build --release --target aarch64-unknown-linux-musl
+COPY . /app
 
-FROM gcr.io/distroless/cc-debian12:nonroot-arm64
+RUN cargo build --release -j 5
 
-COPY --from=builder /app/target/aarch64-unknown-linux-musl/release/resumeval /resumeval
+FROM gcr.io/distroless/cc-debian12
 
-USER nonroot
+COPY --from=build-env /app/target/release/resumeval /app/resumeval
+WORKDIR /app
 
-ENTRYPOINT ["/resumeval"]
+CMD ["./resumeval", "listen"]
