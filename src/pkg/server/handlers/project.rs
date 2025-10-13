@@ -19,7 +19,7 @@ use crate::{
             email::SendEmail,
             project::{AccessInvite, Project},
         },
-        server::state::AppState,
+        server::state::{AppState, GetTxn},
     },
     prelude::Result,
 };
@@ -70,7 +70,7 @@ pub async fn invite(
         }
     };
     tracing::info!("inviting {} to {}", &user.name, &project.name);
-    let mut txn = state.db_pool.begin().await?;
+    let mut txn = state.db_pool.begin_txn().await?;
     let invite = project
         .invite(&mut *txn, &user.user_id, &me.user_id)
         .await?;
@@ -90,7 +90,7 @@ pub async fn accept(
     Query(params): Query<AcceptQuery>,
     Extension(user): Extension<Arc<User>>,
 ) -> Result<Redirect> {
-    let mut txn = state.db_pool.begin().await?;
+    let mut txn = state.db_pool.begin_txn().await?;
     let invite = AccessInvite::new(&state, &params.invite_code).await?;
     invite.accept(&mut *txn).await?;
     tracing::info!(

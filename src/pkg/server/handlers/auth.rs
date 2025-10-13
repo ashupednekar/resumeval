@@ -13,7 +13,7 @@ use validator::Validate;
 use crate::{
     pkg::{
         internal::auth::{AuthToken, TokenStatus, User},
-        server::state::AppState,
+        server::state::{AppState, GetTxn},
     },
     prelude::Result,
 };
@@ -48,13 +48,14 @@ pub async fn logout(
     State(state): State<AppState>,
     Extension(user): Extension<Arc<User>>,
 ) -> Result<Html<String>> {
+    let mut tx = state.db_pool.begin_txn().await?;
     sqlx::query!(
         "update tokens set status = $2 where user_id = $3 and status = $1",
         TokenStatus::Verified as _,
         TokenStatus::Expired as _,
         user.user_id
     )
-    .execute(&*state.db_pool)
+    .execute(&mut *tx)
     .await?;
     tracing::info!("User {} logged out successfully", &user.name);
     Ok(Html(r#"
@@ -77,7 +78,7 @@ pub async fn verify(
     State(state): State<AppState>,
     Form(input): Form<VerifyInput>,
 ) -> Result<(HeaderMap, Html<String>)> {
-    let pool = &*state.db_pool;
+    let mut tx = state.db_pool.begin_txn().await?; 
     let jar = CookieJar::from_headers(&headers);
     let mut headers = HeaderMap::new();
     if let Some(email) = jar.get("_Host_email").filter(|c| !c.value().is_empty()) {
@@ -86,14 +87,14 @@ pub async fn verify(
             "select user_id, email, name from users where email = $1",
             email.value()
         )
-        .fetch_one(pool)
+        .fetch_one(&mut *tx)
         .await?;
         let token = sqlx::query_as!(
             AuthToken,
             r#"select token, user_id, code, expiry, status as "status:_" from tokens where user_id = $1 and status = $2"#,
             user.user_id,
             TokenStatus::Pending as _
-        ).fetch_optional(pool).await?;
+        ).fetch_optional(&mut *tx).await?;
         tracing::debug!("verifying token: {:?}", &token);
         if let Some(token) = token {
             if input.code != token.code {
@@ -103,7 +104,7 @@ pub async fn verify(
                     TokenStatus::Rejected as _,
                     user.user_id
                 )
-                .execute(pool)
+                .execute(&mut *tx)
                 .await?;
                 return Ok((headers, Html(
                 r#"<div id='code-error' class='text-red-500 text-center text-sm mt-2'>Invalid code, please try again.</div>"#.to_string()
@@ -115,7 +116,7 @@ pub async fn verify(
                     TokenStatus::Verified as _,
                     user.user_id
                 )
-                .execute(pool)
+                .execute(&mut *tx)
                 .await?;
                 headers.insert(
                     SET_COOKIE,
