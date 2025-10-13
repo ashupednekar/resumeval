@@ -81,16 +81,20 @@ spec:
             cpu: "500m"
         livenessProbe:
           httpGet:
-            path: /health
+            path: /livez
             port: 3001
           initialDelaySeconds: 30
           periodSeconds: 10
         readinessProbe:
           httpGet:
-            path: /health
+            path: /healthz
             port: 3001
           initialDelaySeconds: 5
           periodSeconds: 5
+        lifecycle:
+          postStart:
+            exec:
+              command: "/app/resumeval migrate"
 ---
 apiVersion: v1
 kind: Service
@@ -132,4 +136,3 @@ spec:
             name: resumeval
             port:
               number: 80
-
