@@ -70,7 +70,6 @@ impl Project {
         };
 
         let (invite_res, repo_res) = tokio::join!(invite_result, repo_result);
-
         match (invite_res, repo_res) {
             (Ok(()), Ok(())) => {
                 tx.commit().await?;
@@ -137,6 +136,7 @@ impl Project {
         )
         .execute(&mut *tx)
         .await?;
+        tx.commit().await?;
         Ok(())
     }
 

@@ -58,6 +58,7 @@ impl User {
         )
         .fetch_one(&mut *tx)
         .await?;
+        tx.commit().await?;
         Ok(user)
     }
 
@@ -96,6 +97,7 @@ impl User {
             code: &code,
         }
         .send(&self.email)?;
+        tx.commit().await?;
         Ok(())
     }
 }
