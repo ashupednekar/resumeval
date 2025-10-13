@@ -13,7 +13,7 @@ use standard_error::{HtmlRes, StandardError, Status};
 use crate::{
     pkg::{
         internal::auth::{AuthToken, User},
-        server::{state::AppState, uispec::Verify},
+        server::{state::{AppState, GetTxn}, uispec::Verify},
     },
     prelude::Result,
 };
@@ -24,6 +24,7 @@ pub async fn authenticate(
     mut request: Request,
     next: Next,
 ) -> Result<Response> {
+    let mut tx = state.db_pool.begin_txn().await?;
     let jar = CookieJar::from_headers(&headers);
     let maybe_cookie = jar.get("_Host_token").filter(|c| !c.value().is_empty());
     if let Some(cookie) = maybe_cookie {
@@ -42,7 +43,7 @@ pub async fn authenticate(
             "select user_id, email, name from users where email = $1",
             email.value()
         )
-        .fetch_optional(&*state.db_pool)
+        .fetch_optional(&mut *tx)
         .await?
         {
             user.issue_token(&state).await?;
