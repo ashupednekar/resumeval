@@ -95,7 +95,7 @@ spec:
           postStart:
             exec:
               command: 
-              - /app/resumeval 
+              - /app/target/release/resumeval 
               - migrate
 ---
 apiVersion: v1
