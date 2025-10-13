@@ -12,7 +12,7 @@ jobs:
 
     env:
       IMAGE_NAME: ashupednekar535/resumeval
-      GHCR_CHART_REPO: ghcr.io/ashupednekar535/charts
+      GHCR_CHART_REPO: ghcr.io/charts
       CHART_PATH: devops/chart
 
     steps:
