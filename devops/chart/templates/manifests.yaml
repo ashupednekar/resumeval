@@ -86,13 +86,13 @@ spec:
             path: /livez
             port: 3001
           initialDelaySeconds: 30
-          periodSeconds: 10
+          periodSeconds: 30
         readinessProbe:
           httpGet:
             path: /healthz
             port: 3001
           initialDelaySeconds: 5
-          periodSeconds: 5
+          periodSeconds: 30
         lifecycle:
           postStart:
             exec:
