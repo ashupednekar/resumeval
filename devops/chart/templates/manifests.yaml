@@ -1,11 +1,11 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: Statefulset 
 metadata:
   name: resumeval
   labels:
     app: resumeval
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: resumeval
@@ -34,6 +34,8 @@ spec:
               key: database-url
         - name: DATABASE_SCHEMA
           value: "auth"
+        - name: SQLX_OFFLINE
+          value: "true"
         - name: DATABASE_POOL_MAX_CONNECTIONS
           value: "5"
         - name: SMTP_USER
