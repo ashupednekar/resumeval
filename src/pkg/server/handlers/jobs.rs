@@ -12,7 +12,7 @@ use crate::{
             ai::{fetch::process, generate::GenerateOps, index::IndexOps},
             auth::User,
         },
-        server::state::AppState,
+        server::state::{AppState, GetTxn},
     },
     prelude::Result,
 };
@@ -46,7 +46,7 @@ pub async fn create(
     Extension(user): Extension<Arc<User>>,
     Json(input): Json<CreateJobInput>,
 ) -> Result<Json<JobEntry>> {
-    let mut tx = state.db_pool.begin().await?;
+    let mut tx = state.db_pool.begin_txn().await?;
     let job = JobMutator::new(&mut tx)
         .create(&user.user_id, input)
         .await?;

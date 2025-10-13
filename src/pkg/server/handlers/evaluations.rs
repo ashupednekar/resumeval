@@ -28,6 +28,7 @@ use crate::pkg::internal::ai::generate::GenerateOps;
 use crate::pkg::internal::ai::index::IndexOps;
 use crate::pkg::internal::ai::read::extract_document;
 use crate::pkg::internal::minio::S3Ops;
+use crate::pkg::server::state::GetTxn;
 use crate::{
     pkg::{
         internal::{
@@ -141,7 +142,7 @@ pub async fn create(
         .parse()
         .map_err(|_| StandardError::new("EVAL-008: Invalid job ID"))?;
 
-    let mut tx = state.db_pool.begin().await?;
+    let mut tx = state.db_pool.begin_txn().await?;
 
     let evaluation = EvaluationMutator::new(&mut tx)
         .create(&name, job_id, &user.user_id)
@@ -200,7 +201,7 @@ pub async fn create(
         let ai_client = state.ai_client.clone();
         // TODO: indexing
         // tokio::spawn(async move{
-        //     let mut tx = db_pool.begin().await?;
+        //     let mut tx = db_pool.begin_txn().await?;
         //     let (data, content_type) =  s3_client.retrieve_object(&settings.s3_bucket_name, &resume.file_path).await?;
         //     let content = extract_document(data, &content_type)?;
         //     tracing::debug!("pdf content: {}", &content);
@@ -220,7 +221,7 @@ pub async fn create(
         //     }
         // });
         tokio::spawn(async move{
-            let mut tx = db_pool.begin().await?;
+            let mut tx = db_pool.begin_txn().await?;
             let (data, content_type) =  s3_client.retrieve_object(&settings.s3_bucket_name, &resume.file_path).await?;
             let content = extract_document(data, &content_type)?;
             let job = match JobSelector::new(&mut *tx).get_by_id(evaluation.job_id).await?{
@@ -287,7 +288,7 @@ pub async fn list(
     State(state): State<AppState>,
     Extension(user): Extension<Arc<User>>,
 ) -> Result<Json<Vec<EvaluationEntry>>> {
-    let mut tx = state.db_pool.begin().await?;
+    let mut tx = state.db_pool.begin_txn().await?;
     let evaluations = EvaluationSelector::new(&mut tx)
         .get_evaluations_for_user(&user.user_id)
         .await?;
@@ -307,7 +308,7 @@ pub async fn get_details(
     Extension(user): Extension<Arc<User>>,
     AxumPath(evaluation_id): AxumPath<i32>,
 ) -> Result<Json<EvaluationDetails>> {
-    let mut tx = state.db_pool.begin().await?;
+    let mut tx = state.db_pool.begin_txn().await?;
     let evaluations = EvaluationSelector::new(&mut tx)
         .get_evaluations_for_user(&user.user_id)
         .await?;
@@ -337,7 +338,7 @@ pub async fn get_documents(
     Extension(user): Extension<Arc<User>>,
     AxumPath(evaluation_id): AxumPath<i32>,
 ) -> Result<Json<Vec<ResumeEntry>>>{
-    let mut tx = state.db_pool.begin().await?;
+    let mut tx = state.db_pool.begin_txn().await?;
 
     let evaluation = match EvaluationSelector::new(&mut *tx)
         .get_by_id(evaluation_id)
@@ -358,7 +359,7 @@ pub async fn retrieve_document(
     State(state): State<AppState>,
     AxumPath(document_id): AxumPath<i32>
 ) -> Result<impl IntoResponse>{
-    let mut tx = state.db_pool.begin().await?;
+    let mut tx = state.db_pool.begin_txn().await?;
     let resume = ResumeSelector::new(&mut tx).get_resume_by_id(document_id).await?;
     
     let (file_data, content_type) = state.s3_client

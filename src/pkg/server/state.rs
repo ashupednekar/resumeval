@@ -4,7 +4,8 @@ use aws_sdk_s3::{
     Client as S3Client,
     config::{Credentials, Region},
 };
-use sqlx::PgPool;
+use axum::async_trait;
+use sqlx::{PgConnection, PgPool, Transaction};
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 use standard_error::{Interpolate, StandardError};
 use std::sync::Arc;
@@ -22,6 +23,21 @@ pub struct AppState {
     pub ai_client: Arc<AIClient>,
     pub s3_client: Arc<S3Client>,
 }
+
+#[async_trait]
+pub trait GetTxn{
+    async fn begin_txn(&self) -> Result<Transaction<'static, Postgres>>;
+}
+
+#[async_trait]
+impl GetTxn for Arc<PgPool>{
+    async fn begin_txn(&self) -> Result<Transaction<'static, Postgres>>{
+        let mut tx = self.begin().await?;
+        sqlx::query(&format!("set search_path to {}", &settings.database_schema)).execute(&mut *tx).await?;
+        Ok(tx)
+    }
+}
+
 
 impl AppState {
     pub async fn new() -> Result<AppState> {

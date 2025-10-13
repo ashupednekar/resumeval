@@ -1,4 +1,4 @@
-use crate::{pkg::server::state::AppState, prelude::Result};
+use crate::{pkg::server::state::{AppState, GetTxn}, prelude::Result};
 use serde::Serialize;
 use sqlx::{
     PgConnection, Postgres, QueryBuilder, Transaction,
@@ -40,7 +40,7 @@ impl Project {
         description: &str,
         user_id: &str,
     ) -> Result<Self> {
-        let mut tx = state.db_pool.begin().await?;
+        let mut tx = state.db_pool.begin_txn().await?;
         let txn = &mut *tx;
         let project = sqlx::query_as!(
             Project,
