@@ -36,7 +36,7 @@ spec:
         requests:
           storage: 20Gi
     name: postgres
-    replicas: 3
+    replicas: 1
   #config:
   #  parameters:
   #    max_parallel_workers: 2
@@ -52,6 +52,9 @@ spec:
           max_connections: "500"
   proxy:
     pgBouncer:
+      service:
+        type: NodePort
+        nodePort: 30054
       # service:
       #   type: LoadBalancer
       # port: 5432
