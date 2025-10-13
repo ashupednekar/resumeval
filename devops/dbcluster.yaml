@@ -1,0 +1,58 @@
+apiVersion: postgres-operator.crunchydata.com/v1beta1
+kind: PostgresCluster
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: db
+  namespace: essentials
+spec:
+  #metadata:
+  #  annotations:
+  #    eks.amazonaws.com/role-arn: arn:aws:iam::400309783243:role/dev-pgbackrest-s3-access
+  #note: backups will only be disabled in operator 5.7.4+ with backupsEnabled: false
+  #backups:
+  #  pgbackrest:
+  #    global:
+  #      repo1-s3-uri-style: path
+  #      repo1-s3-key-type: web-id
+  #      repo1-retention-full: "14"
+  #      repo1-retention-diff: "7"
+  #    repos:
+  #    - name: repo1
+  #      s3:
+  #        bucket: devcluster-db-backups
+  #        endpoint: s3.amazonaws.com
+  #        region: ap-south-1  
+  #      schedules:
+  #        full: "0 1 * * 0"     # Weekly full backup at 1 AM on Sunday
+  #        differential: "0 1 * * 1-6"  # Daily differential backups at 1 AM
+  # service:
+  #   type: LoadBalancer 
+  instances:
+  - dataVolumeClaimSpec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 20Gi
+    name: postgres
+    replicas: 3
+  #config:
+  #  parameters:
+  #    max_parallel_workers: 2
+  #    max_worker_processes: 2
+  #    shared_buffers: 1GB
+  #    work_mem: 2MB
+  port: 5432
+  postgresVersion: 16
+  patroni:
+    dynamicConfiguration:
+      postgresql:
+        parameters:
+          max_connections: "500"
+  proxy:
+    pgBouncer:
+      # service:
+      #   type: LoadBalancer
+      # port: 5432
+      replicas: 2
