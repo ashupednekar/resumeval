@@ -10,7 +10,9 @@ pub async fn apply() -> Result<()> {
     let pool = Arc::new(PgPool::connect(&settings.database_url).await
         .map_err(|e| StandardError::new("ERR-DB-000").interpolate_err(e.to_string()))
         ?);
+    tracing::debug!("connected to db");
     let mut tx = pool.begin_txn().await?;
+    tracing::debug!("set search path and started txn");
     MIGRATOR.run(&mut tx).await
         .map_err(|e| StandardError::new("ERR-DB-000").interpolate_err(e.to_string()))
         ?;
