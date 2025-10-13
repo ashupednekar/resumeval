@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build and Push Docker Image & Helm Chart
 
 on:
   push:
@@ -9,7 +9,12 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    
+
+    env:
+      IMAGE_NAME: ashupednekar535/resumeval
+      GHCR_CHART_REPO: ghcr.io/ashupednekar535/charts
+      CHART_PATH: devops/charts/resumeval
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -23,17 +28,24 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract short SHA
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ashupednekar535/resumeval
+          images: ${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix={{branch}}-
+            type=sha,prefix=,suffix=,format=short
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
@@ -41,9 +53,44 @@ jobs:
         with:
           context: .
           file: devops/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ env.sha_short }}
+            ${{ env.IMAGE_NAME }}:latest
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.15.2
+
+      - name: Update image tag in values.yaml
+        run: |
+          yq -i '.image.repository = "${{ env.IMAGE_NAME }}"' ${{ env.CHART_PATH }}/values.yaml
+          yq -i '.image.tag = "${{ env.sha_short }}"' ${{ env.CHART_PATH }}/values.yaml
+
+      - name: Bump Helm chart version (patch)
+        run: |
+          current_version=$(yq '.version' ${{ env.CHART_PATH }}/Chart.yaml)
+          new_version=$(echo $current_version | awk -F. -v OFS=. '{$NF += 1 ; print}')
+          yq -i ".version = \"$new_version\"" ${{ env.CHART_PATH }}/Chart.yaml
+          echo "Chart version bumped: $current_version → $new_version"
+
+      - name: Helm registry login
+        run: echo ${{ secrets.GITHUB_TOKEN }} | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Package Helm chart
+        run: |
+          helm package ${{ env.CHART_PATH }} --destination ./
+
+      - name: Push Helm chart to GHCR
+        run: |
+          chart_file=$(ls *.tgz)
+          helm push "$chart_file" oci://${{ env.GHCR_CHART_REPO }}
+
+      - name: Summary
+        run: |
+          echo "✅ Docker Image: ${{ env.IMAGE_NAME }}:${{ env.sha_short }}"
+          echo "✅ Helm Chart pushed to: oci://${{ env.GHCR_CHART_REPO }}"
