@@ -17,8 +17,6 @@ pub async fn apply() -> Result<()> {
     
     tracing::debug!("connected to db");
     let mut tx = pool.begin_txn().await?;
-    tracing::debug!("set search path and started txn");
-    
     MIGRATOR.run(&mut *tx).await
         .map_err(|e| StandardError::new("ERR-DB-000").interpolate_err(e.to_string()))?;
     
