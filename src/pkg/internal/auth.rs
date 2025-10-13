@@ -155,7 +155,7 @@ impl AuthToken {
                 r#"SELECT user_id, email, name FROM users WHERE user_id = $1"#,
                 token.user_id
             )
-            .fetch_one(pool)
+            .fetch_one(&mut *tx)
             .await?;
             Ok(user)
         } else {
