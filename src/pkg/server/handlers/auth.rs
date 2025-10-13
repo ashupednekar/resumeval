@@ -106,6 +106,7 @@ pub async fn verify(
                 )
                 .execute(&mut *tx)
                 .await?;
+                tx.commit().await?;
                 return Ok((headers, Html(
                 r#"<div id='code-error' class='text-red-500 text-center text-sm mt-2'>Invalid code, please try again.</div>"#.to_string()
             )));
@@ -123,6 +124,7 @@ pub async fn verify(
                     HeaderValue::from_str(&format!("_Host_token={}", &token.token))?,
                 );
                 headers.insert("HX-Redirect", HeaderValue::from_str("/")?);
+                tx.commit().await?;
                 Ok((
                     headers,
                     Html(
