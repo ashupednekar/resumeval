@@ -13,7 +13,7 @@ jobs:
     env:
       IMAGE_NAME: ashupednekar535/resumeval
       GHCR_CHART_REPO: ghcr.io/ashupednekar535/charts
-      CHART_PATH: devops/charts/resumeval
+      CHART_PATH: devops/charts
 
     steps:
       - name: Checkout code
@@ -39,15 +39,6 @@ jobs:
         id: vars
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.IMAGE_NAME }}
-          tags: |
-            type=sha,prefix=,suffix=,format=short
-            type=raw,value=latest,enable={{is_default_branch}}
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -57,7 +48,6 @@ jobs:
           tags: |
             ${{ env.IMAGE_NAME }}:${{ env.sha_short }}
             ${{ env.IMAGE_NAME }}:latest
-          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -66,10 +56,12 @@ jobs:
         with:
           version: v3.15.2
 
-      - name: Update image tag in values.yaml
+      - name: Update image tag in manifests.yaml
         run: |
-          yq -i '.image.repository = "${{ env.IMAGE_NAME }}"' ${{ env.CHART_PATH }}/values.yaml
-          yq -i '.image.tag = "${{ env.sha_short }}"' ${{ env.CHART_PATH }}/values.yaml
+          # Replace repository
+          sed -i "s|\(image:\s*\).*|\1${{ env.IMAGE_NAME }}:${{ env.sha_short }}|" \
+            ${{ env.CHART_PATH }}/templates/manifests.yaml
+          echo "✅ Updated image reference in manifests.yaml"
 
       - name: Bump Helm chart version (patch)
         run: |
