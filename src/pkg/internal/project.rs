@@ -179,18 +179,19 @@ impl AccessInvite {
     }
 
     pub async fn details(&self, state: &AppState) -> Result<ShowInvite> {
+        let mut tx = state.db_pool.begin_txn().await?;
         let project = sqlx::query_as!(
             Project,
             "select project_id, name, description from projects where project_id = $1",
             &self.project_id
         )
-        .fetch_one(&*state.db_pool)
+        .fetch_one(&mut *tx)
         .await?;
         let inviter = sqlx::query_scalar!(
             "select name from users where user_id = $1",
             &self.inviter_id
         )
-        .fetch_one(&*state.db_pool)
+        .fetch_one(&mut *tx)
         .await?;
         Ok(ShowInvite {
             invite_id: self.invite_id.to_string(),
