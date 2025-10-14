@@ -1,0 +1,35 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT token FROM tokens\n            WHERE user_id = $1 AND status = $2 AND expiry > NOW()\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        {
+          "Custom": {
+            "name": "token_status",
+            "kind": {
+              "Enum": [
+                "pending",
+                "verified",
+                "expired",
+                "rejected"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "4428c2b871c53d2bce33d82a30f2d506a7d4372c90069344257f8365c521f596"
+}

@@ -1,0 +1,60 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            insert into project_access (invite_id, project_id, user_id, expiry, inviter_id)\n            values ($1, $2, $3, NOW() + interval '1 hour', $4)\n            on conflict (project_id, user_id) do update \n            set expiry = NOW() + INTERVAL '1 hour'\n            returning user_id, invite_id, project_id, inviter_id, status as \"status:_\"\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 1,
+        "name": "invite_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "project_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "inviter_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 4,
+        "name": "status:_",
+        "type_info": {
+          "Custom": {
+            "name": "invite_status",
+            "kind": {
+              "Enum": [
+                "pending",
+                "accepted",
+                "expired"
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar",
+        "Varchar",
+        "Varchar"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "c05acf14bfe0651e2c6ed6808f6f31ebecc59b39866bd4e03b11ea2c829b9ab9"
+}

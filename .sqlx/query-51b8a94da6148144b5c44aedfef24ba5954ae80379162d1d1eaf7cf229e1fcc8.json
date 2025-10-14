@@ -1,0 +1,71 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select token, user_id, code, expiry, status as \"status:_\" from tokens where user_id = $1 and status = $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "code",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "expiry",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "status:_",
+        "type_info": {
+          "Custom": {
+            "name": "token_status",
+            "kind": {
+              "Enum": [
+                "pending",
+                "verified",
+                "expired",
+                "rejected"
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        {
+          "Custom": {
+            "name": "token_status",
+            "kind": {
+              "Enum": [
+                "pending",
+                "verified",
+                "expired",
+                "rejected"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "51b8a94da6148144b5c44aedfef24ba5954ae80379162d1d1eaf7cf229e1fcc8"
+}
