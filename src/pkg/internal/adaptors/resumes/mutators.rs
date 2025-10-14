@@ -1,6 +1,6 @@
 use crate::{pkg::internal::adaptors::resumes::spec::ResumeEntry, prelude::Result};
 use pgvector::Vector;
-use sqlx::{types::BigDecimal, PgConnection};
+use sqlx::PgConnection;
 
 pub struct CreateResumeData {
     pub evaluation_id: i32,

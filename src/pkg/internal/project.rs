@@ -1,13 +1,13 @@
 use crate::{pkg::server::state::{AppState, GetTxn}, prelude::Result};
 use serde::Serialize;
 use sqlx::{
-    PgConnection, Postgres, QueryBuilder, Transaction,
+    PgConnection, QueryBuilder,
     prelude::{FromRow, Type},
 };
 use standard_error::StandardError;
 use uuid::Uuid;
 
-use super::{auth::User, email::invite::ShowInvite};
+use super::{email::invite::ShowInvite};
 
 #[derive(Debug, Type)]
 #[sqlx(type_name = "invite_status", rename_all = "lowercase")]

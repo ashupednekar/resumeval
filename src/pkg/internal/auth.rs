@@ -5,14 +5,12 @@ use crate::{
     },
     prelude::Result,
 };
-use axum::http::StatusCode;
-use rand::{Rng, distr::Alphanumeric};
+use rand::Rng;
 use sqlx::{
     prelude::{FromRow, Type},
     types::time::OffsetDateTime,
 };
-use standard_error::{StandardError, Status};
-use std::sync::Arc;
+use standard_error::StandardError;
 use uuid::Uuid;
 
 #[derive(Debug, Type)]
@@ -78,6 +76,21 @@ impl User {
 
     pub async fn issue_token(&self, state: &AppState) -> Result<()> {
         let mut tx = state.db_pool.begin_txn().await?;
+        let existing_token = sqlx::query!(
+            r#"
+            SELECT token FROM tokens
+            WHERE user_id = $1 AND status = $2 AND expiry > NOW()
+            "#,
+            self.user_id,
+            TokenStatus::Pending as _
+        )
+        .fetch_optional(&mut *tx)
+        .await?;
+        if existing_token.is_some() {
+            tracing::debug!("Pending token already exists for user_id: {}", self.user_id);
+            tx.commit().await?;
+            return Ok(());
+        }
         let code = AuthToken::generate_code();
         tracing::debug!("issued code: {}", &code);
         sqlx::query!(

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{conf::settings, prelude::Result, pkg::server::state::GetTxn};
-use sqlx::{migrate::Migrator, postgres::PgPoolOptions, PgPool};
+use sqlx::{migrate::Migrator, postgres::PgPoolOptions};
 use standard_error::{Interpolate, StandardError};
 
 static MIGRATOR: Migrator = sqlx::migrate!("./migrations");

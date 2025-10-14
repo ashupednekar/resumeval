@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
 use ai::{
-    chat_completions::{ChatCompletion, ChatCompletionMessage, ChatCompletionRequestBuilder}, clients::openai::Client, embeddings::{Embeddings, EmbeddingsRequestBuilder}
-};
+    chat_completions::{ChatCompletion, ChatCompletionMessage, ChatCompletionRequestBuilder}, clients::openai::Client};
 use standard_error::{Interpolate, StandardError};
 
 use crate::{conf::settings, prelude::Result};

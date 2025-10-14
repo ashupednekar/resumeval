@@ -1,13 +1,9 @@
 use std::path::Path;
-use std::str::FromStr;
 use std::sync::Arc;
-use axum::body::Bytes;
 use axum::response::IntoResponse;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::StatusCode;
-use sqlx::types::BigDecimal;
-use tokio::io::AsyncWriteExt;
-use tokio::{fs, task::JoinSet};
+use tokio::{task::JoinSet};
 use uuid::Uuid;
 
 use axum::{
@@ -25,7 +21,6 @@ use crate::pkg::internal::adaptors::resumes::mutators::{CreateResumeData, Resume
 use crate::pkg::internal::adaptors::resumes::selectors::ResumeSelector;
 use crate::pkg::internal::adaptors::resumes::spec::ResumeEntry;
 use crate::pkg::internal::ai::generate::GenerateOps;
-use crate::pkg::internal::ai::index::IndexOps;
 use crate::pkg::internal::ai::read::extract_document;
 use crate::pkg::internal::minio::S3Ops;
 use crate::pkg::server::state::GetTxn;
@@ -33,7 +28,7 @@ use crate::{
     pkg::{
         internal::{
             adaptors::evaluations::{
-                mutators::EvaluationMutator, selectors::EvaluationSelector, spec::EvaluationWithJob,
+                mutators::EvaluationMutator, selectors::EvaluationSelector,
             },
             auth::User,
         },
@@ -295,7 +290,7 @@ pub async fn list(
     Ok(Json(evaluations))
 }
 
-pub async fn details_page(AxumPath(evaluation_id): AxumPath<i32>) -> Result<Html<String>> {
+pub async fn details_page(AxumPath(_evaluation_id): AxumPath<i32>) -> Result<Html<String>> {
     let template = tokio::fs::read_to_string("templates/evaluation_details.html")
         .await
         .map_err(|e| StandardError::new(&format!("EVAL-TEMPLATE-001: {}", e)))?;

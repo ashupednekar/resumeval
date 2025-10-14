@@ -48,7 +48,7 @@ fn extract_text_from_pdf(data: &[u8]) -> Result<String> {
 fn extract_text_from_docx(data: &[u8]) -> Result<String> {
     use docx_rs::read_docx;
     let docx = read_docx(&data)
-        .map_err(|e| StandardError::new("ERR-AI-005"))?;
+        .map_err(|e| StandardError::new("ERR-AI-005").interpolate_err(e.to_string()))?;
     let mut text = String::new();
     for paragraph in docx.document.children {
         if let docx_rs::DocumentChild::Paragraph(p) = paragraph {

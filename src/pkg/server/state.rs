@@ -5,7 +5,7 @@ use aws_sdk_s3::{
     config::{Credentials, Region},
 };
 use axum::async_trait;
-use sqlx::{PgConnection, PgPool, Transaction};
+use sqlx::{PgPool, Transaction};
 use sqlx::{Pool, Postgres, postgres::PgPoolOptions};
 use standard_error::{Interpolate, StandardError};
 use std::sync::Arc;
