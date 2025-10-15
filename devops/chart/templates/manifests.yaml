@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: resumeval
-        image: docker.io/ashupednekar535/resumeval:latest
+        image: ashupednekar535/resumeval:4623cec
         ports:
         - containerPort: 3001
           name: http
