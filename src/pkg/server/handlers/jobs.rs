@@ -53,7 +53,7 @@ pub async fn create(
     //TODO: pubsub maybe...
     let jd = serde_json::to_string(&job)?;
     tokio::spawn(async move{
-        let mut tx = state.db_pool.begin().await?;
+        let mut tx = state.db_pool.begin_txn().await?;
         let embedding = state.ai_client.index_document(&jd).await?;
         JobMutator::new(&mut *tx).add_embedding(job.id, embedding).await?;
         Ok::<(), StandardError>(())
@@ -101,7 +101,7 @@ pub async fn generate_from_url(
 }
 
 pub async fn list(State(state): State<AppState>) -> Result<Json<Vec<JobEntry>>> {
-    let mut tx = state.db_pool.begin().await?;
+    let mut tx = state.db_pool.begin_txn().await?;
     let jobs = JobSelector::new(&mut *tx).get_all().await?;
     Ok(Json(jobs))
 }
@@ -111,7 +111,7 @@ pub async fn update(
     Extension(_user): Extension<Arc<User>>,
     Json(input): Json<PatchJobInput>,
 ) -> Result<Json<JobEntry>> {
-    let mut tx = state.db_pool.begin().await?;
+    let mut tx = state.db_pool.begin_txn().await?;
     let job = JobMutator::new(&mut tx)
         .update(input.id as i32, input)
         .await?;
