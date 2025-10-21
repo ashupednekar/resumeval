@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: resumeval
-        image: ashupednekar535/resumeval:4623cec
+        image: ashupednekar535/resumeval:f89de29
         ports:
         - containerPort: 3001
           name: http
